@@ -1,8 +1,29 @@
 {
   "variables": [
-    {"name":"LAB_DB_HOST","value":"postgres","description":"Docker Compose service host"},
-    {"name":"LAB_DB_PORT","value":"5432","description":"Internal PostgreSQL port"},
-    {"name":"LAB_DB_NAME","value":"labdata","description":"Demo analytics database"},
-    {"name":"LAB_DB_USER","value":"labuser","description":"Demo database username"}
+    {
+      "name": "LAB_DB_HOST",
+      "value": "postgres",
+      "description": "Docker Compose service host"
+    },
+    {
+      "name": "LAB_DB_PORT",
+      "value": "5432",
+      "description": "Internal PostgreSQL port"
+    },
+    {
+      "name": "LAB_DB_NAME",
+      "value": "labdata",
+      "description": "Demo analytics database"
+    },
+    {
+      "name": "LAB_DB_USER",
+      "value": "labuser",
+      "description": "Demo database username"
+    },
+    {
+      "name": "LAB_DB_PASSWORD",
+      "value": "cbb8633bd6b8481768ce9b23c4f494973694166dc8335597",
+      "description": "Demo database password"
+    }
   ]
 }
