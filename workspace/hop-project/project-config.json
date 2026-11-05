@@ -1,0 +1,9 @@
+{
+  "description": "Data Engineering capstone project - standalone sample",
+  "metadataBaseFolder": "${PROJECT_HOME}/metadata",
+  "unitTestsBasePath": "${PROJECT_HOME}",
+  "dataSetsCsvFolder": "${PROJECT_HOME}/datasets",
+  "enforcingExecutionInHome": true,
+  "parentProjectName": "default",
+  "config": {"variables": []}
+}

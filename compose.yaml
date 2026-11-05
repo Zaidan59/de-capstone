@@ -1,0 +1,280 @@
+name: ${LAB_NAME:-de-capstone-lab}
+
+x-common-env: &common-env
+  TZ: ${TZ:-Asia/Jakarta}
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      POSTGRES_DB: labdata
+      POSTGRES_USER: labuser
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run init to generate .env}
+    ports:
+      - "127.0.0.1:${PG_PORT:-55432}:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./sql/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U labuser -d labdata"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    networks: [labnet]
+
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Run init to generate .env}
+      MYSQL_DATABASE: labsource
+      MYSQL_USER: labmysql
+      MYSQL_PASSWORD: ${MYSQL_APP_PASSWORD:?Run init to generate .env}
+    ports:
+      - "127.0.0.1:${MYSQL_PORT:-53306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./sql/mysql-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [labnet]
+
+  workbench:
+    build:
+      context: .
+      dockerfile: docker/workbench/Dockerfile
+      args:
+        HOP_VERSION: ${HOP_VERSION:-2.19.0}
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      TITLE: Data Engineering Workbench
+      CUSTOM_USER: ${WEBTOP_USER:-student}
+      PASSWORD: ${WEBTOP_PASSWORD:?Run init to generate .env}
+      HOP_CONFIG_FOLDER: /config/hop-config
+      LAB_DB_HOST: postgres
+      LAB_DB_PORT: "5432"
+      LAB_DB_NAME: labdata
+      LAB_DB_USER: labuser
+      LAB_DB_PASSWORD: ${POSTGRES_PASSWORD:?Run init to generate .env}
+      LAB_MYSQL_HOST: mysql
+      LAB_MYSQL_PORT: "3306"
+      LAB_MYSQL_DB: labsource
+      LAB_MYSQL_USER: labmysql
+      LAB_MYSQL_PASSWORD: ${MYSQL_APP_PASSWORD:?Run init to generate .env}
+    ports:
+      - "127.0.0.1:${WORKBENCH_PORT:-3001}:3001"
+    volumes:
+      - workbench_config:/config
+      - ./workspace:/config/workspace
+    shm_size: 1gb
+    depends_on:
+      postgres: {condition: service_healthy}
+      mysql: {condition: service_healthy}
+    networks: [labnet]
+
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${CLOUDBEAVER_PORT:-8978}:8978"
+    volumes:
+      - cloudbeaver_data:/opt/cloudbeaver/workspace
+    depends_on:
+      postgres: {condition: service_healthy}
+      mysql: {condition: service_healthy}
+    networks: [labnet]
+
+  airflow:
+    profiles: [orchestration]
+    build:
+      context: .
+      dockerfile: docker/airflow/Dockerfile
+      args:
+        HOP_VERSION: ${HOP_VERSION:-2.19.0}
+    command: ["bash", "/usr/local/bin/bootstrap-airflow.sh"]
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      AIRFLOW_HOME: /opt/airflow
+      HOP_CONFIG_FOLDER: /opt/airflow/hop-config
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__API__AUTH_BACKENDS: airflow.api.auth.backend.session
+      LAB_DB_HOST: postgres
+      LAB_DB_PORT: "5432"
+      LAB_DB_NAME: labdata
+      LAB_DB_USER: labuser
+      LAB_DB_PASSWORD: ${POSTGRES_PASSWORD:?Run init to generate .env}
+      LAB_WORKSPACE: /opt/lab/workspace
+    ports:
+      - "127.0.0.1:${AIRFLOW_PORT:-8086}:8080"
+    volumes:
+      - airflow_data:/opt/airflow
+      - ./modules/airflow/dags:/opt/airflow/dags:ro
+      - ./workspace:/opt/lab/workspace
+    depends_on:
+      postgres: {condition: service_healthy}
+    networks: [labnet]
+
+  kafka:
+    profiles: [streaming]
+    image: apache/kafka:4.1.2
+    restart: unless-stopped
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: CONTROLLER://:9093,INTERNAL://:9092,EXTERNAL://:29092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:${KAFKA_PORT:-29092}
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    ports:
+      - "127.0.0.1:${KAFKA_PORT:-29092}:29092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks: [labnet]
+
+  flink-jobmanager:
+    profiles: [streaming]
+    build:
+      context: .
+      dockerfile: docker/flink/Dockerfile
+    command: jobmanager
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jobmanager
+        parallelism.default: 1
+        execution.checkpointing.interval: 30s
+    ports:
+      - "127.0.0.1:${FLINK_PORT:-8081}:8081"
+    volumes:
+      - ./modules/streaming:/opt/lab/streaming:ro
+    depends_on: [kafka]
+    networks: [labnet]
+
+  flink-taskmanager:
+    profiles: [streaming]
+    build:
+      context: .
+      dockerfile: docker/flink/Dockerfile
+    command: taskmanager
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jobmanager
+        taskmanager.numberOfTaskSlots: 2
+        parallelism.default: 1
+    depends_on: [flink-jobmanager]
+    networks: [labnet]
+
+  spark:
+    profiles: [lakehouse]
+    build:
+      context: .
+      dockerfile: docker/spark/Dockerfile
+    entrypoint: ["/bin/bash", "-lc"]
+    command: ["sleep infinity"]
+    environment:
+      <<: *common-env
+      SPARK_LOCAL_IP: 127.0.0.1
+      HOME: /tmp
+    volumes:
+      - ./warehouse:/opt/lab/warehouse
+      - ./modules/lakehouse:/opt/lab/sql:ro
+      - ./workspace:/opt/lab/workspace:ro
+    networks: [labnet]
+
+  minio:
+    profiles: [objectstore]
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER:-labminio}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:?Run init to generate .env}
+    ports:
+      - "127.0.0.1:${MINIO_API_PORT:-9000}:9000"
+      - "127.0.0.1:${MINIO_UI_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    networks: [labnet]
+
+  grafana:
+    profiles: [observability]
+    image: grafana/grafana-oss:12.2.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Run init to generate .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: http://localhost:${GRAFANA_PORT:-3002}
+      LAB_DB_PASSWORD: ${POSTGRES_PASSWORD:?Run init to generate .env}
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3002}:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      postgres: {condition: service_healthy}
+    networks: [labnet]
+
+  superset:
+    profiles: [bi]
+    build:
+      context: .
+      dockerfile: docker/superset/Dockerfile
+    environment:
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY:?Run init to generate .env}
+      SUPERSET_ADMIN_USERNAME: admin
+      SUPERSET_ADMIN_PASSWORD: ${SUPERSET_ADMIN_PASSWORD:?Run init to generate .env}
+      SUPERSET_CONFIG_PATH: /app/superset_config.py
+      SUPERSET_HOME: /app/superset_home
+      PYTHONPATH: /app
+    command: ["/bin/bash", "/app/bootstrap-lab.sh"]
+    ports:
+      - "127.0.0.1:${SUPERSET_PORT:-8088}:8088"
+    volumes:
+      - superset_data:/app/superset_home
+    depends_on:
+      postgres: {condition: service_healthy}
+    networks: [labnet]
+
+  keycloak:
+    profiles: [identity]
+    image: quay.io/keycloak/keycloak:26.4.1
+    command: ["start-dev", "--http-port=8080"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?Run init to generate .env}
+    ports:
+      - "127.0.0.1:${KEYCLOAK_PORT:-8090}:8080"
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+    networks: [labnet]
+
+networks:
+  labnet: {}
+
+volumes:
+  pg_data: {}
+  mysql_data: {}
+  workbench_config: {}
+  cloudbeaver_data: {}
+  airflow_data: {}
+  kafka_data: {}
+  minio_data: {}
+  grafana_data: {}
+  superset_data: {}
+  keycloak_data: {}

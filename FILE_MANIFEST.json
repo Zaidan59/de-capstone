@@ -1,0 +1,336 @@
+{
+  "version": "2026.10.29",
+  "validation": "static-only",
+  "files": [
+    {
+      "path": ".dockerignore",
+      "sha256": "c52c8e94a7e0ae464817b0c1b58052fb0304ba0a3dff9bcdaf336458a236d5c3",
+      "bytes": 71
+    },
+    {
+      "path": ".env.example",
+      "sha256": "17c59b19ca90adf87b1d32c5982e7eb58b5ae6e20ebe91e7ec76c635debb4649",
+      "bytes": 762
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "11275269bfe2339fba54ce668c0cc60b8b9f19b93fabda11b86c2b966c8924a5",
+      "bytes": 165
+    },
+    {
+      "path": "LICENSES_AND_SOURCES.md",
+      "sha256": "c6d078187e4024afe047630980e35c1f962f702f71afba0b072b1c7e7f1b3e45",
+      "bytes": 1689
+    },
+    {
+      "path": "PACKAGE_VERSION.txt",
+      "sha256": "b618e929d3cedc0afb5257c28460ee8375c462b58242a67e5b7785f5ad52d44d",
+      "bytes": 172
+    },
+    {
+      "path": "README.md",
+      "sha256": "5beec8a860464c83932c285d2daabd688264df7573e6d60ba1163f06243a7e9b",
+      "bytes": 6310
+    },
+    {
+      "path": "compose/README.md",
+      "sha256": "d997f36e0846fc24e9d3a14b3f03da0244216d929457b73272ce505a0d380a49",
+      "bytes": 1070
+    },
+    {
+      "path": "compose/openmetadata.yaml",
+      "sha256": "4de734794a234bf289221e5cc6e58c55c4adf6b65545a9e2915ea974b06b8620",
+      "bytes": 2608
+    },
+    {
+      "path": "compose.yaml",
+      "sha256": "fbf60ee8ba07944c0d5cff3ec302a2141e5e71c254a99166f1bb2c79b6fb374f",
+      "bytes": 8479
+    },
+    {
+      "path": "config/grafana/provisioning/datasources/postgres.yml",
+      "sha256": "30eebc83b6f2d419281b3131a0efb017316393810ff358d20de839e330d52d87",
+      "bytes": 343
+    },
+    {
+      "path": "docker/airflow/Dockerfile",
+      "sha256": "412fc65089a115d5b361afddfb4a7fbd71425ea2874d1646268a15e931bbe12d",
+      "bytes": 707
+    },
+    {
+      "path": "docker/airflow/bootstrap.sh",
+      "sha256": "b72b1e73215f551ee08ea9497a8710c2a1a7454eee26d6deade2033aacc26e67",
+      "bytes": 615
+    },
+    {
+      "path": "docker/flink/Dockerfile",
+      "sha256": "3ae91a46a4313e7caa686f91a8e15706d8216c7447c9ca3a1d63bf09767d809c",
+      "bytes": 400
+    },
+    {
+      "path": "docker/spark/Dockerfile",
+      "sha256": "f30ebe7dc685e3a5f7ffc87834df8d5d5a1b4dd61114cc1c9e4ff706ec8fc28b",
+      "bytes": 512
+    },
+    {
+      "path": "docker/superset/Dockerfile",
+      "sha256": "df5dd5736aab000b887341a4165d44defc8c214efe4327ed310edf9cc6134579",
+      "bytes": 280
+    },
+    {
+      "path": "docker/superset/bootstrap-lab.sh",
+      "sha256": "d94f05de7410f3c64ee890569b0c5f68e7583fe0f1c9227cb8ece4adaf8b1eed",
+      "bytes": 372
+    },
+    {
+      "path": "docker/superset/superset_config.py",
+      "sha256": "d698f0ec37bd4273b0a9091af23f1d686ee39b2d03d10434752079c0dcdf8084",
+      "bytes": 272
+    },
+    {
+      "path": "docker/workbench/Dockerfile",
+      "sha256": "5a44aa15a0d52fc4f2a45323d5ee375a356bea8a793e159de41a31ca9eca914e",
+      "bytes": 2471
+    },
+    {
+      "path": "docker/workbench/hop-gui",
+      "sha256": "e44a314d96acd771a378c350a9f8b7fc7b11bc34d130feec5bad7d5847e6de32",
+      "bytes": 54
+    },
+    {
+      "path": "docker/workbench/hop-run",
+      "sha256": "2f9680a890c9423f6af4b0563337058cbf3a84e0bf01c05464c826d751e67300",
+      "bytes": 54
+    },
+    {
+      "path": "docker/workbench/hop-setup",
+      "sha256": "1a7450f22ef75ca519ba9b6798a8e0757150cf0bce2f7025be32e752796f5c61",
+      "bytes": 773
+    },
+    {
+      "path": "docker/workbench/hop.desktop",
+      "sha256": "862267abdeb8d7dcb67f80f52a264af169aa0ac6a8278d52c7055ce1a167aa0e",
+      "bytes": 200
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "sha256": "d5a9af2ca2eb3e45d136767b5e04a3278d2a416e697c860d5a577a8895caf05d",
+      "bytes": 1376
+    },
+    {
+      "path": "docs/BEFORE_CLASS_AND_QA.md",
+      "sha256": "a07223133416ed8b56fb3ca5a72634b4f6e4401936fa40a4d003f2581ddcb25e",
+      "bytes": 2493
+    },
+    {
+      "path": "docs/CROSS_PLATFORM_GUIDE.md",
+      "sha256": "8ae266ad6dd2300db142be905499523f0e656ae8459a6c3a784b09d28400f744",
+      "bytes": 3208
+    },
+    {
+      "path": "docs/DATA_GOVERNANCE_AND_SECURITY.md",
+      "sha256": "693014e615bc820f59df3a266c1c5bdcffab4cf7785525fa111ea4d878812e80",
+      "bytes": 1796
+    },
+    {
+      "path": "docs/LABFIK_DATA_SOURCE_ADAPTERS.md",
+      "sha256": "0f5ee2d5145afba7964a45d34500f21932aaa4c4d244c1f43dc0e1195510be30",
+      "bytes": 2265
+    },
+    {
+      "path": "docs/OPTIONAL_PROFILES.md",
+      "sha256": "f1a332d7612a4c4d9d1bff3ad198524bafde732e875e655d4a6b267c211efdb6",
+      "bytes": 3704
+    },
+    {
+      "path": "docs/Operator_Manual_Deployment_Guide.docx",
+      "sha256": "4fdc44ec8622475db798e636b8b7193020b18c4afb993ba03905b1124388d739",
+      "bytes": 42076
+    },
+    {
+      "path": "docs/RUNTIME_QA_RESULTS_TEMPLATE.csv",
+      "sha256": "aa34fc157b2c2618ae83db1af38d49db4121f64887bb5c0cf88c5d6fd3597f15",
+      "bytes": 197
+    },
+    {
+      "path": "docs/SERVICE_MATRIX.md",
+      "sha256": "644efeda6372d813dd6f824d2018983979ad3eb4ef2544d142241a4e508c7706",
+      "bytes": 2138
+    },
+    {
+      "path": "docs/TROUBLESHOOTING.md",
+      "sha256": "41291e2a46a0fd43c7514e0aa2e216294605214a37149e83b3e1e770049a721d",
+      "bytes": 2594
+    },
+    {
+      "path": "modules/airflow/dags/capstone_hop_dag.py",
+      "sha256": "c743a29a49b495fbe3489a67c7d77882077fc95c4b4759c9d7d8f59fea1fbf95",
+      "bytes": 1050
+    },
+    {
+      "path": "modules/lakehouse/iceberg.sql",
+      "sha256": "4b60b965129e5b7af625354f10b2afbd83b21f00d6c64d694912f0f988cd8429",
+      "bytes": 793
+    },
+    {
+      "path": "modules/lakehouse/run_iceberg.sh",
+      "sha256": "4b61591a0696ed3ffcc52e62ef9af4f17a9a47e1013b145eda372dd871028339",
+      "bytes": 400
+    },
+    {
+      "path": "modules/metadata/catalog.csv",
+      "sha256": "06b77db2f2d5fef0e5c930c2b1f7d7b0dab351f6605570cf0f40132641d4fd4c",
+      "bytes": 294
+    },
+    {
+      "path": "modules/metadata/lineage.csv",
+      "sha256": "ce1edd03c0f874d67ba581110c962428ed9e36ebb40127f6c8f0fba6fc1ea6d0",
+      "bytes": 254
+    },
+    {
+      "path": "modules/observability/sample_queries.sql",
+      "sha256": "5c8a680f282508002de138cfd402ba825f904980d2c53473629dbf2ac71b28b2",
+      "bytes": 352
+    },
+    {
+      "path": "modules/security/rls_demo.sql",
+      "sha256": "db066d2b07ae21cd8cb189968b5ed141ff819ac5292ea773baf3c9cd66b26bb2",
+      "bytes": 733
+    },
+    {
+      "path": "modules/serving/semantic.sql",
+      "sha256": "660c08ffefa03c06b27411f4b1f345de516b07cb18a8f833b09be8f2f1984f9e",
+      "bytes": 256
+    },
+    {
+      "path": "modules/streaming/flink_sql.sql",
+      "sha256": "a7fd160d739f866fd416ababf5e2c80637d70c005f7540ed8b1ceebbd04d76e6",
+      "bytes": 928
+    },
+    {
+      "path": "modules/streaming/kafka_events.jsonl",
+      "sha256": "a00b1b96bb3cdab52af82247d34e7aef89d6029557fe78e9b31c4e75a8881fc8",
+      "bytes": 500
+    },
+    {
+      "path": "scripts/lab.ps1",
+      "sha256": "a2c7c4eab6880020895a46db87e1852fbfec9a0c4e5f4d5657f83c653da71be3",
+      "bytes": 6548
+    },
+    {
+      "path": "scripts/lab.sh",
+      "sha256": "8f59d7b705b9bb07b8073ac6f3a651831f113cbcdd28adf93c4779a94efb2efe",
+      "bytes": 6161
+    },
+    {
+      "path": "sql/mysql-init/01-source.sql",
+      "sha256": "ebf1c53bc2b5c74978277f9b2540e4011d4218e7c451ca2c1db7ff47a6ed23a7",
+      "bytes": 671
+    },
+    {
+      "path": "sql/postgres-init/01-create.sql",
+      "sha256": "34edc4ef18413d800e17d19f167d7e47a6f19f97cfe0c96965317aaacd0a6534",
+      "bytes": 2159
+    },
+    {
+      "path": "sql/postgres-init/02-demo.sql",
+      "sha256": "9ad82cbee005749b3a78012805588a70486a0abb4c8ac21dd4fafd815dc88b9d",
+      "bytes": 1493
+    },
+    {
+      "path": "tests/validate_package.py",
+      "sha256": "b569bb93f697d948b935af9f00f82d261c52b642540386806adf72e775f0518e",
+      "bytes": 2307
+    },
+    {
+      "path": "warehouse/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "workspace/.vscode/extensions.json",
+      "sha256": "71c60cf6d16d1afaf37014574fc831e5ec32527991c7e24e9de90bf4cd86b34b",
+      "bytes": 90
+    },
+    {
+      "path": "workspace/README.md",
+      "sha256": "fc20b33b965632ca5cc82fcebee26a246c941fc581f1cdd7c0e7dca7facbda6b",
+      "bytes": 750
+    },
+    {
+      "path": "workspace/data/README.md",
+      "sha256": "e0a674c7a03f4619799972d269362684784074e339251bdb9d4e011a3befcd97",
+      "bytes": 455
+    },
+    {
+      "path": "workspace/data/ocs_assets_synthetic.csv",
+      "sha256": "ba0b2f1aba578a6e21b372f509d80d7e63c9cc3f6c6eeab4df3603a2075106b5",
+      "bytes": 342
+    },
+    {
+      "path": "workspace/data/sales_events.jsonl",
+      "sha256": "c606589e3ba34e286103e8546339a1eaf73df523f53eec893465b09b5f716b65",
+      "bytes": 372
+    },
+    {
+      "path": "workspace/data/zabbix_trends_synthetic.csv",
+      "sha256": "f55f8e1b8c96d289e34a5eca1cdf7705eff01e23006b1db15cd664fc007e3e04",
+      "bytes": 317
+    },
+    {
+      "path": "workspace/evidence/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "workspace/hop-project/README.md",
+      "sha256": "e05c880df6c597a5937ba0dd7717115f913191f94a4f8d3a5340a332568a2034",
+      "bytes": 1312
+    },
+    {
+      "path": "workspace/hop-project/environments/docker-local.json",
+      "sha256": "84264036fae4a82772a254fc8ad0ac22cbc4237697d8aa7fee51c3d95b5416a6",
+      "bytes": 370
+    },
+    {
+      "path": "workspace/hop-project/metadata/rdbms/lab-postgres.json",
+      "sha256": "923a4def5d21aff0d0d6a3b5926e221bcd0b54ba5d3d9df86b28437f58fac504",
+      "bytes": 721
+    },
+    {
+      "path": "workspace/hop-project/pipelines/pl_load_sales.hpl",
+      "sha256": "b87032c140beacbec44272e4f8acb47e88034d60b7d19cf0cb2b69a55e1bc967",
+      "bytes": 3403
+    },
+    {
+      "path": "workspace/hop-project/project-config.json",
+      "sha256": "7201df6751776270b59c09c2f5fdf921326f9a484f4c9609cddaa1fdedb5e8df",
+      "bytes": 323
+    },
+    {
+      "path": "workspace/hop-project/workflows/wf_load_sales.hwf",
+      "sha256": "282f5f153a36a5f54003a5e05e7d4aad420050464c4f5cdfd155bf99827cd9a9",
+      "bytes": 2650
+    },
+    {
+      "path": "workspace/java/SalesCheck.java",
+      "sha256": "9ff05305c7ff0c9395da0092de5b4dfa6649a19ac5cff9548809d58501170be3",
+      "bytes": 264
+    },
+    {
+      "path": "workspace/python/extract_sales.py",
+      "sha256": "ac7d7b5611226ace2d73eec67ba3f3c038bcba13e5cd9368b3ae4e08bcf9ea08",
+      "bytes": 697
+    },
+    {
+      "path": "workspace/python/ocs_v3_readonly_api_template.py",
+      "sha256": "ef2c6d5b00a334366881f76e2ae48646645b73fa9a7e211fd9f1fdf41c074958",
+      "bytes": 806
+    },
+    {
+      "path": "workspace/python/zabbix_readonly_api.py",
+      "sha256": "3e4ff3d0632da47bf88795dcf5b28594496899177666d4ccb3018298c864ce34",
+      "bytes": 898
+    }
+  ]
+}

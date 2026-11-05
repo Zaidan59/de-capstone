@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Apache Hop GUI
+Comment=ETL/ELT pipelines and workflows
+Exec=/usr/local/bin/hop-gui
+Icon=applications-development
+Terminal=false
+Type=Application
+Categories=Development;Education;

@@ -1,0 +1,4 @@
+asset_name,domain,owner,classification,description
+raw.sales_orders,Commerce,Data Engineering Team,Internal,Synthetic operational transactions
+stg.sales_orders,Commerce,Data Steward,Internal,Normalized synthetic sales
+mart.daily_sales,Commerce,Analytics Owner,Internal,Daily sales data product

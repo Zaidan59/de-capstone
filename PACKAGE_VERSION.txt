@@ -1,0 +1,3 @@
+Data Engineering Capstone Infrastructure 2026.10.29
+Core: PostgreSQL/MySQL/Hop-VSCodium Webtop/CloudBeaver
+Deployment validation: STATIC ONLY; runtime acceptance required.

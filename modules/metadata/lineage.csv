@@ -1,0 +1,4 @@
+source,target,process,level,confidence
+raw.sales_orders,stg.sales_orders,Hop pl_load_sales,table,MANUAL_VERIFIED
+stg.sales_orders,mart.daily_sales,SQL aggregate,table,MANUAL_VERIFIED
+mart.daily_sales,semantic.v_daily_sales,SQL view,table,MANUAL_VERIFIED

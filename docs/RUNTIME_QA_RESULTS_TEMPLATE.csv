@@ -1,0 +1,5 @@
+profile,platform,device_ram_gb,tested_at,result,blocker,fix,evidence_ref,reviewer
+core,Windows 11 WSL2,,,,,,,
+core,Ubuntu 24.04,,,,,,,
+streaming,Windows 11 WSL2,,,,,,,
+metadata,Ubuntu 24.04,,,,,,,

@@ -1,0 +1,9 @@
+.env
+.git
+workspace/evidence
+warehouse
+*.zip
+*.docx
+*.pdf
+*.png
+*.xlsx

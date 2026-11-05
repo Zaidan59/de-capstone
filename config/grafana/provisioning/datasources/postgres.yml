@@ -1,0 +1,16 @@
+apiVersion: 1
+datasources:
+  - name: Capstone PostgreSQL
+    uid: de-postgres
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    user: labuser
+    secureJsonData:
+      password: $LAB_DB_PASSWORD
+    jsonData:
+      database: labdata
+      sslmode: disable
+      postgresVersion: 1600
+      timescaledb: false
+    isDefault: true

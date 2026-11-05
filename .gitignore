@@ -1,0 +1,11 @@
+.env
+**/__pycache__/
+**/.pytest_cache/
+**/.DS_Store
+workspace/evidence/**
+!workspace/evidence/.gitkeep
+workspace/.venv/
+warehouse/**
+!warehouse/.gitkeep
+*.pyc
+*.log

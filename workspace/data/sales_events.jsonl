@@ -1,0 +1,3 @@
+{"event_id":"sale-001","source_system":"ODOO","order_id":"ORD-001","occurred_at":"2026-10-01T08:00:00Z","amount":25000}
+{"event_id":"sale-002","source_system":"PRESTASHOP","order_id":"ORD-002","occurred_at":"2026-10-01T08:01:00Z","amount":50000}
+{"event_id":"sale-002","source_system":"PRESTASHOP","order_id":"ORD-002","occurred_at":"2026-10-01T08:01:00Z","amount":50000}

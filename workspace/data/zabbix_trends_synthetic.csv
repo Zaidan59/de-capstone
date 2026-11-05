@@ -1,0 +1,5 @@
+source_host_id,hostname,metric_key,clock_hour,value_avg,value_max
+1001,LAB-PC-101,system.cpu.util,2026-09-01T10:00:00Z,41.2,75.5
+1002,LAB-PC-102,system.cpu.util,2026-09-01T10:00:00Z,35.8,83.4
+1003,LAB-SRV-01,vm.memory.util,2026-09-01T10:00:00Z,63.1,71.3
+1001,LAB-PC-101,system.cpu.util,2026-09-01T11:00:00Z,49.9,89.1
