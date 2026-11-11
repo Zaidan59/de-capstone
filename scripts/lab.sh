@@ -102,6 +102,10 @@ case "$CMD" in
     check_ready
     compose exec -T postgres psql -U labuser -d labdata -f /docker-entrypoint-initdb.d/02-demo.sql
     ;;
+  seed-food)
+    check_ready
+    compose exec -T -u abc workbench python /config/workspace/python/load_food_to_mysql.py
+    ;;
   backup)
     check_ready
     mkdir -p backups

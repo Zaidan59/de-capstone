@@ -55,15 +55,19 @@ Menjalankan PostgreSQL 16, MySQL 8.4, CloudBeaver, dan Webtop Workbench:
   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\lab.ps1 up core
   ```
 
-### 5. Verifikasi Instalasi (`preflight`)
+### 5. Verifikasi Instalasi & Muat Data Sumber
 Pastikan semua kontainer berjalan dan seed database berhasil:
 - **Linux / Git Bash**:
   ```bash
   bash scripts/lab.sh preflight
+  # Muat 12 tabel data pangan mentah ke MySQL labsource
+  bash scripts/lab.sh seed-food
   ```
 - **PowerShell**:
   ```powershell
   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\lab.ps1 preflight
+  # Muat 12 tabel data pangan mentah ke MySQL labsource
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\lab.ps1 seed-food
   ```
 
 ---

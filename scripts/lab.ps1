@@ -95,6 +95,7 @@ try {
       Compose @('exec','-T','postgres','psql','-U','labuser','-d','labdata','-Atc','SELECT COUNT(*) FROM stg.sales_orders;')
     }
     'seed' { Ensure-Ready; Compose @('exec','-T','postgres','psql','-U','labuser','-d','labdata','-f','/docker-entrypoint-initdb.d/02-demo.sql') }
+    'seed-food' { Ensure-Ready; Compose @('exec','-T','-u','abc','workbench','python','/config/workspace/python/load_food_to_mysql.py') }
     'reset-demo' {
       Ensure-Ready
       Compose @('exec','-T','postgres','psql','-U','labuser','-d','labdata','-c','TRUNCATE stg.sales_orders, mart.daily_sales;')
