@@ -1,120 +1,155 @@
-# Paket Infrastruktur Proyek Akhir Data Engineering (S1 Sistem Informasi)
+# Capstone Project Data Engineering — GROUP A03
 
-**Edisi 2026 — Windows (PowerShell/Git Bash) dan Linux — Docker Compose**
+> **Pembangunan Data Mart Terintegrasi untuk Pemantauan Dinamika Harga Pangan dan Anomali Cuaca Sentra Pemasok (Koridor Jawa Barat – DKI Jakarta)**  
+> Mata Kuliah: Data Engineering (S1 Sistem Informasi) — Edisi 2026
 
-Paket **infrastruktur saja**, terpisah dari Project Proposal, Final Report,
-Data & Evidence Workbook, serta rubrik dosen. Tidak perlu hasil praktikum
-pertemuan 05–14 untuk memulai. **Belum termasuk image Docker/offline mirror**:
-Docker akan menarik image/build dependencies dari internet pada eksekusi awal.
+---
 
-## Mulai cepat
+## 👥 Tim Penyusun (GROUP A03)
 
-1. Pasang Docker Desktop + WSL2 (Windows) atau Docker Engine + Compose Plugin (Linux).
-2. Ekstrak ZIP ke direktori biasa (hindari OneDrive/network drive dan path panjang/spasi ekstrem).
-3. Dari PowerShell:
-   ```powershell
-   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\lab.ps1 init
-   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\lab.ps1 up core
-   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\lab.ps1 preflight
-   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\lab.ps1 hop-demo
-   ```
-4. Dari Git Bash atau Linux:
+| NIM | Nama | Role / Tanggung Jawab |
+| :--- | :--- | :--- |
+| **2410512043** | Muhammad Zaidan | G1: Proposal & Source Feasibility Lead |
+| **2410512060** | Fia Dwi Agustina | G2 & G7: Architecture, Contracts & Final Demo |
+| **2410512074** | Fadjar Malik Fadhilah | G6: Orchestration, Incident & Recovery |
+| **2410512075** | Muhammad Ghalib Rafiqi | G3 & G4: Ingestion, Quality Tests & Scorecard |
+| **2410512087** | Imam Hermawan Putra | G5: Data Modeling, KPIs & Governance |
+
+---
+
+## 🚀 Panduan Mulai Cepat (Quickstart untuk Tim)
+
+Ikuti langkah di bawah ini setelah melakukan `git clone` di komputer masing-masing.
+
+### 1. Prasyarat Sistem
+- **Docker Desktop** (dengan WSL2 aktif untuk Windows) atau **Docker Engine + Docker Compose** (Linux/macOS).
+- **RAM minimal**: 8–16 GB disarankan.
+- Koneksi internet stabil untuk download image pada eksekusi pertama.
+
+### 2. Clone Repository
+```bash
+git clone https://github.com/Zaidan59/de-capstone.git
+cd de-capstone
+```
+
+### 3. Inisialisasi Environment (`.env`)
+Generate file konfigurasi `.env` dengan password acak lokal yang aman:
+- **Linux / Git Bash (Windows)**:
+  ```bash
+  bash scripts/lab.sh init
+  ```
+- **PowerShell (Windows)**:
+  ```powershell
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\lab.ps1 init
+  ```
+> **Catatan**: File `.env` bersifat privat di komputer masing-masing dan **tidak boleh di-commit** ke Git.
+
+### 4. Nyalakan Layanan Inti (`up core`)
+Menjalankan PostgreSQL 16, MySQL 8.4, CloudBeaver, dan Webtop Workbench:
+- **Linux / Git Bash**:
+  ```bash
+  bash scripts/lab.sh up core
+  ```
+- **PowerShell**:
+  ```powershell
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\lab.ps1 up core
+  ```
+
+### 5. Verifikasi Instalasi (`preflight`)
+Pastikan semua kontainer berjalan dan seed database berhasil:
+- **Linux / Git Bash**:
+  ```bash
+  bash scripts/lab.sh preflight
+  ```
+- **PowerShell**:
+  ```powershell
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\lab.ps1 preflight
+  ```
+
+---
+
+## 🖥️ Akses Aplikasi & Tools
+
+Setelah kontainer berjalan, akses layanan melalui browser:
+
+| Aplikasi / Service | URL / Host Port | Kredensial & Keterangan |
+| :--- | :--- | :--- |
+| **Workbench Desktop** | [https://localhost:3001/](https://localhost:3001/) | Desktop browser XFCE (Apache Hop GUI, VSCodium, Terminal).<br>• **User**: `student`<br>• **Password**: cek `grep WEBTOP_PASSWORD .env`<br>*(Abaikan peringatan browser self-signed SSL)* |
+| **CloudBeaver (SQL Client)** | [http://localhost:8978/](http://localhost:8978/) | SQL client web mirip DBeaver. Setup admin saat first-run. |
+| **PostgreSQL** | `localhost:55432` | DB: `labdata`, User: `labuser`, Password: cek di `.env` |
+| **MySQL** | `localhost:53306` | DB: `labsource`, User: `labmysql`, Password: cek di `.env` |
+
+> [!TIP]
+> **Koneksi Database di CloudBeaver:**
+> Karena CloudBeaver berjalan di dalam Docker, gunakan hostname kontainer:
+> - **PostgreSQL**: Host: `postgres` | Port: `5432` | DB: `labdata`
+> - **MySQL**: Host: `mysql` | Port: `3306` | DB: `labsource`  
+> *(Jangan gunakan `localhost` saat membuat koneksi di CloudBeaver).*
+
+---
+
+## 📁 Struktur Direktori
+
+```text
+de-capstone/
+├── compose.yaml          # Konfigurasi multi-container Docker Compose
+├── docs/                 # Dokumen proposal, manual guide, workbook, dan dataset
+│   ├── 01_Capstone_Proposal_GROUP A03.docx
+│   ├── 02_Capstone_Final_Report_Template.docx
+│   ├── 03_Capstone_Data_and_Evidence_Workbook.xlsx
+│   └── Dataset/          # Dataset mentah cuaca & harga komoditas pangan
+├── scripts/
+│   ├── lab.sh            # Helper script untuk Linux / Git Bash
+│   └── lab.ps1           # Helper script untuk Windows PowerShell
+└── workspace/            # Direktori kerja (di-mount ke dalam Workbench)
+    ├── data/             # Tempat dataset yang diproses pipeline
+    ├── hop-project/      # Proyek Apache Hop (.hpl, .hwf, metadata)
+    ├── python/           # Script ekstraksi/transformasi Python
+    └── sql/              # Script query DDL, DML, dan mart
+```
+
+---
+
+## 🌿 Aturan Kerja Kelompok (Git Workflow)
+
+Agar pekerjaan antar anggota tim tidak bentrok (*conflict*), ikuti aturan berikut:
+
+1. **Tarik update terbaru sebelum bekerja**:
    ```bash
-   bash scripts/lab.sh init
-   bash scripts/lab.sh up core
-   bash scripts/lab.sh preflight
-   bash scripts/lab.sh hop-demo
+   git pull origin main
    ```
-5. Buka aplikasi:
-
-   | Aplikasi | URL | Keterangan |
-   | --- | --- | --- |
-   | **Workbench** | **https://localhost:3001/** | XFCE browser desktop dengan **VSCodium desktop sungguhan**, Apache Hop GUI, Python, Java 21, Maven, Git |
-   | **CloudBeaver** | http://localhost:8978/ | **DBeaver Web (CloudBeaver Community)**, SQL client berbasis browser |
-   | PostgreSQL | localhost:55432 | DB `labdata`, user `labuser`, password di `.env` |
-   | MySQL | localhost:53306 | DB `labsource`, user `labmysql`, password di `.env` |
-
-   Browser akan memperingatkan sertifikat HTTPS self-signed Workbench.
-   Lanjutkan hanya untuk `localhost` pada PC Anda. Login Workbench memakai
-   `WEBTOP_USER` dan `WEBTOP_PASSWORD` dari `.env`.
-
-**Jangan** mengekspos port Workbench ke Internet: terminal desktop Webtop
-memberikan hak menjalankan perintah di container. Semua host port dalam
-Compose diikat ke `127.0.0.1` secara default.
-
-## Layanan wajib dan opsional
-
-| Jenis | Layanan | Profile/perintah | Fungsi |
-| --- | --- | --- | --- |
-| **Core** | PostgreSQL 16 | `up core` | Analytics, metadata operasional, data-quality samples |
-| **Core** | MySQL 8.4 | `up core` | Contoh transactional source |
-| **Core** | Apache Hop 2.19 GUI + CLI | Di Workbench | ETL/ELT workflow, pipelines |
-| **Core** | VSCodium, Python, Java 21, Maven, Git | Di Workbench | Development Python/Java, editor kode |
-| **Core** | CloudBeaver Community | `up core` | DBeaver dalam browser, JDBC query |
-| Optional | Airflow 3 | `up orchestration` | Scheduling, retries/backfill; Hop runtime tersedia |
-| Optional | Kafka + Flink SQL | `up streaming` | Event delivery, stateful/event-time analysis |
-| Optional | Spark + Iceberg | `up lakehouse` | Snapshots, schema evolution, time travel |
-| Optional | MinIO | `up objectstore` | Storage kompatibel S3 untuk eksperimen |
-| Optional | OpenMetadata | `up metadata` | Catalog, glossary, lineage; deployment berat/eksperimental |
-| Optional | Grafana | `up observability` | Dashboard PostgreSQL metrics |
-| Optional | Apache Superset | `up bi` | Consumer dashboards, BI |
-| Optional | Keycloak | `up identity` | SSO/IAM extension; bukan kebutuhan wajib capstone |
-
-Lihat `docs/SERVICE_MATRIX.md` dan `docs/CROSS_PLATFORM_GUIDE.md`.
-
-## Menggunakan Apache Hop + VSCodium
-
-1. Buka Workbench di `https://localhost:3001`.
-2. Menu XFCE **Applications → Development → Apache Hop GUI**, atau buka terminal dan jalankan `hop-gui`.
-3. Jalankan `hop-setup` satu kali (atau `./scripts/lab.sh hop-setup` dari host).
-4. Proyek tersedia di `/config/workspace/hop-project`.
-5. Metadata connection `lab-postgres` merujuk ke variabel `LAB_DB_HOST`, dst.,
-   bukan password plaintext. Pipeline demo `pl_load_sales.hpl` membaca
-   `raw.sales_orders`, mengisi ulang `stg.sales_orders` (khusus data sintetis).
-6. Jalankan Workbench editor **VSCodium** dari menu, dan buka folder
-   `/config/workspace` untuk menulis Python dan Java.
-7. Uji `python /config/workspace/python/extract_sales.py` serta:
+2. **Buat branch baru untuk setiap fitur/tugas**:
    ```bash
-   cd /config/workspace/java
-   javac SalesCheck.java && java SalesCheck
+   git checkout -b feat/<nama-fitur>
+   # Contoh: git checkout -b feat/ingest-cuaca-karawang
    ```
+3. **Commit dan Push ke branch Anda**:
+   ```bash
+   git add .
+   git commit -m "feat: implement data cleaning for garut weather"
+   git push -u origin feat/<nama-fitur>
+   ```
+4. **Buka Pull Request (PR)** di GitHub:
+   - Ajukan PR ke branch `main`.
+   - Diskusikan dan pastikan tidak ada conflict sebelum di-merge ke `main`.
 
-`hop-demo` hanya mereset tabel staging **data sintetis**; jangan memakainya
-pada data asli. Docker Compose core menyiapkan data demo otomatis pada
-inisialisasi database yang pertama.
+---
 
-## Koneksi CloudBeaver
+## 🛠️ Perintah Tambahan
 
-Pada first-run wizard buat administrator CloudBeaver lokal. Tambahkan:
-
-- PostgreSQL: **host `postgres`**, port `5432`, database `labdata`, user `labuser`.
-- MySQL: **host `mysql`**, port `3306`, database `labsource`, user `labmysql`.
-
-Jangan memasukkan `localhost` sebagai host DB dari dalam CloudBeaver:
-`localhost` di sana berarti container CloudBeaver, bukan PC Windows/Linux.
-
-## Privasi dan integrasi LABFIK
-
-File `workspace/data/` adalah **data sintetis**, bukan export produksi Zabbix 7
-atau OCS Inventory 3. Adapter Python contoh ditempatkan di `workspace/python/`
-dan tidak akan mengakses server sampai URL/token read-only disediakan sendiri.
-Akses nyata wajib disetujui data owner dengan scope, rate limit, klasifikasi,
-retention, serta audit trail. Jangan menyimpan credential production di Git/ZIP.
-
-## Pengendalian resource dan data
-
-- **Core**: disarankan RAM host 16 GB (12 GB bisa terbatas); internet diperlukan untuk build Hop/VSCodium.
-- **Streaming/Lakehouse**: disarankan RAM host 24–32 GB atau jalankan pada VM bersama.
-- **OpenMetadata**: disarankan RAM host 24–32 GB dan 4+ vCPU; harus ditest terpisah terlebih dahulu.
-- `stop` mempertahankan volume dan workspace.
-- `backup` menghasilkan `backups/labdata_*.sql`.
-- `reset-demo` hanya reset tabel contoh, tidak menghapus workspaces/volume.
-- `destroy` **menghapus semua named volumes** dan harus mengetik `DELETE`.
-
-## Batas validasi
-
-File paket, JSON/XML, YAML dan shell scripts telah diperiksa secara statis.
-**Docker image build dan integrasi runtime belum dapat diuji pada lingkungan
-pembuatan dokumen ini.** Instruktur/kelompok wajib menjalankan checklist pada
-`docs/BEFORE_CLASS_AND_QA.md` di PC target sebelum menyatakan siap kelas.
-Profile OpenMetadata adalah **opt-in experimental**, bukan instalasi production.
+- **Mematikan layanan lab**:
+  ```bash
+  bash scripts/lab.sh stop core
+  ```
+- **Melihat status kontainer**:
+  ```bash
+  bash scripts/lab.sh status
+  ```
+- **Melihat log kontainer**:
+  ```bash
+  bash scripts/lab.sh logs
+  ```
+- **Backup database PostgreSQL**:
+  ```bash
+  bash scripts/lab.sh backup
+  ```
