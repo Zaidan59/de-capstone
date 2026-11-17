@@ -11,3 +11,5 @@ warehouse/**
 !warehouse/.gitkeep
 *.pyc
 *.log
+docs
+AGENTS.md
