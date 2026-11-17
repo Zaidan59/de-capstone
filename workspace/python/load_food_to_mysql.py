@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Script untuk memuat dataset komoditas pangan ke MySQL database 'labsource' (sistem OLTP/Source).
-Mencakup 10 komoditas pasar tradisional + 2 komoditas produsen utama (total 12 tabel sumber).
+Mencakup 10 komoditas pasar tradisional, 5 komoditas strategis pasar modern (SRC-02),
+dan 2 komoditas produsen utama (total 17 tabel sumber).
 """
 
 import os
@@ -11,7 +12,7 @@ from sqlalchemy import create_engine
 
 # Konfigurasi koneksi MySQL dari environment variable (di dalam container workbench)
 DB_USER = os.getenv("LAB_MYSQL_USER", "labmysql")
-DB_PASS = os.getenv("LAB_MYSQL_PASSWORD", "8d61235fec86a5e49bfbeae4ab9f6fa6b35e7ee582ea6f77")
+DB_PASS = os.environ["LAB_MYSQL_PASSWORD"]
 DB_HOST = os.getenv("LAB_MYSQL_HOST", "mysql")
 DB_PORT = os.getenv("LAB_MYSQL_PORT", "3306")
 DB_NAME = os.getenv("LAB_MYSQL_DB", "labsource")
@@ -25,10 +26,17 @@ if not os.path.exists(BASE_DIR):
 
 print(f"Connecting to MySQL ({DB_HOST}:{DB_PORT}/{DB_NAME}) as {DB_USER}...")
 
-# 1. 10 Komoditas Pasar Tradisional
+# 1. 10 Komoditas Pasar Tradisional (termasuk 5 komoditas strategis SRC-01)
 tradisional_files = sorted(glob.glob(f"{BASE_DIR}/pasar_tradisional/Cleaned_After_Imputation/*.csv"))
 
-# 2. 2 Komoditas Produsen Utama (Beras & Cabai Rawit untuk disparitas produsen-konsumen)
+# 2. 5 Komoditas Strategis Pasar Modern (SRC-02 proposal)
+STRATEGIC_COMMODITIES = ["beras", "cabai_rawit", "cabai_merah", "bawang_merah", "bawang_putih"]
+modern_files = [
+    f"{BASE_DIR}/pasar_modern/Cleaned_After_Imputation/final_komoditas_modern_{k}_2022_2026.csv"
+    for k in STRATEGIC_COMMODITIES
+]
+
+# 3. 2 Komoditas Produsen Utama (Beras & Cabai Rawit)
 produsen_files = [
     f"{BASE_DIR}/produsen/Cleaned_After_Imputation/final_komoditas_produsen_beras_2022_2026.csv",
     f"{BASE_DIR}/produsen/Cleaned_After_Imputation/final_komoditas_produsen_cabai_rawit_2022_2026.csv"
@@ -38,6 +46,11 @@ all_tasks = []
 for f in tradisional_files:
     komoditas = os.path.basename(f).replace("final_komoditas_tradisional_", "").replace("_2022_2026.csv", "")
     all_tasks.append((f, f"src_tradisional_{komoditas}"))
+
+for f in modern_files:
+    if os.path.exists(f):
+        komoditas = os.path.basename(f).replace("final_komoditas_modern_", "").replace("_2022_2026.csv", "")
+        all_tasks.append((f, f"src_modern_{komoditas}"))
 
 for f in produsen_files:
     if os.path.exists(f):
