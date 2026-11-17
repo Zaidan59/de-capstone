@@ -78,7 +78,7 @@ case "$CMD" in
     echo '--- MySQL test (expected 3) ---'
     compose exec -T mysql sh -lc 'MYSQL_PWD="$MYSQL_PASSWORD" mysql -u "$MYSQL_USER" -D "$MYSQL_DATABASE" -N -e "SELECT COUNT(*) FROM demo_orders;"'
     echo '--- Workbench tools ---'
-    compose exec -T workbench bash -lc 'python --version && java -version && codium --version | head -n 1 && test -f /opt/hop/hop-gui.sh && echo "Apache Hop files: present"'
+    compose exec -T -u abc workbench bash -lc 'python --version && java -version && codium --version | head -n 1 && test -f /opt/hop/hop-gui.sh && echo "Apache Hop files: present"'
     if command -v curl >/dev/null 2>&1; then
       echo '--- Web UIs ---'
       for url in "https://127.0.0.1:$(grep '^WORKBENCH_PORT=' .env | cut -d= -f2)" "http://127.0.0.1:$(grep '^CLOUDBEAVER_PORT=' .env | cut -d= -f2)"; do

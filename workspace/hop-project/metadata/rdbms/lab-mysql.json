@@ -1,0 +1,29 @@
+{
+  "rdbms": {
+    "MYSQL": {
+      "databaseName": "${LAB_MYSQL_DB}",
+      "pluginId": "MYSQL",
+      "accessType": 0,
+      "hostname": "${LAB_MYSQL_HOST}",
+      "password": "${LAB_MYSQL_PASSWORD}",
+      "pluginName": "MySQL",
+      "port": "${LAB_MYSQL_PORT}",
+      "attributes": {
+        "EXTRA_OPTION_MYSQL.allowPublicKeyRetrieval": "true",
+        "EXTRA_OPTION_MYSQL.serverTimezone": "Asia/Jakarta",
+        "EXTRA_OPTION_MYSQL.useSSL": "false",
+        "FORCE_IDENTIFIERS_TO_LOWERCASE": "N",
+        "FORCE_IDENTIFIERS_TO_UPPERCASE": "N",
+        "PRESERVE_RESERVED_WORD_CASE": "Y",
+        "QUOTE_ALL_FIELDS": "N",
+        "SQL_CONNECT": "",
+        "STREAM_RESULTS": "Y",
+        "SUPPORTS_BOOLEAN_DATA_TYPE": "Y",
+        "SUPPORTS_TIMESTAMP_DATA_TYPE": "Y"
+      },
+      "manualUrl": "",
+      "username": "${LAB_MYSQL_USER}"
+    }
+  },
+  "name": "lab-mysql"
+}

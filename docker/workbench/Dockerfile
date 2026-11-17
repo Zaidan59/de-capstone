@@ -25,6 +25,11 @@ RUN curl -fL --retry 4 \
     && test -f /opt/hop/hop-gui.sh \
     && chmod +x /opt/hop/*.sh \
     && rm -f /tmp/hop.zip /tmp/hop.sha512
+# Add MySQL Connector/J JDBC driver so Apache Hop can extract from MySQL labsource.
+RUN curl -fL --retry 4 \
+       "https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.4.0/mysql-connector-j-8.4.0.jar" \
+       -o /opt/hop/lib/jdbc/mysql-connector-j-8.4.0.jar \
+    && echo "b1bc0f47bcad26ad5f9bceefb63fcb920d868fca  /opt/hop/lib/jdbc/mysql-connector-j-8.4.0.jar" | sha1sum -c -
 # Isolated Python environment for coursework; no system pip modification.
 RUN python3 -m venv --system-site-packages /opt/de-python \
     && /opt/de-python/bin/pip install --no-cache-dir \
@@ -34,9 +39,11 @@ COPY docker/workbench/hop-setup /usr/local/bin/hop-setup
 COPY docker/workbench/hop-gui /usr/local/bin/hop-gui
 COPY docker/workbench/hop-run /usr/local/bin/hop-run
 COPY docker/workbench/hop.desktop /usr/share/applications/apache-hop.desktop
-RUN chmod +x /usr/local/bin/hop-gui /usr/local/bin/hop-run /usr/local/bin/hop-setup
+RUN sed -i 's/\r$//' /usr/local/bin/hop-gui /usr/local/bin/hop-run /usr/local/bin/hop-setup \
+    && chmod +x /usr/local/bin/hop-gui /usr/local/bin/hop-run /usr/local/bin/hop-setup
 ENV PATH="/opt/de-python/bin:${PATH}"
 ENV HOP_HOME=/opt/hop
 # Do not override Webtop's init/entrypoint: it starts the remote desktop service.
 
 ENV HOP_CONFIG_FOLDER=/config/hop-config
+ENV DONT_PROMPT_WSL_INSTALL=1

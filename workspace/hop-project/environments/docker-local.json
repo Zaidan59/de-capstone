@@ -21,9 +21,24 @@
       "description": "Demo database username"
     },
     {
-      "name": "LAB_DB_PASSWORD",
-      "value": "cbb8633bd6b8481768ce9b23c4f494973694166dc8335597",
-      "description": "Demo database password"
+      "name": "LAB_MYSQL_HOST",
+      "value": "mysql",
+      "description": "Docker Compose MySQL source host"
+    },
+    {
+      "name": "LAB_MYSQL_PORT",
+      "value": "3306",
+      "description": "Internal MySQL port"
+    },
+    {
+      "name": "LAB_MYSQL_DB",
+      "value": "labsource",
+      "description": "MySQL source database"
+    },
+    {
+      "name": "LAB_MYSQL_USER",
+      "value": "labmysql",
+      "description": "MySQL source username"
     }
   ]
 }
