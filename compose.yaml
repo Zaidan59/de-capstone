@@ -60,6 +60,7 @@ services:
       CUSTOM_USER: ${WEBTOP_USER:-student}
       PASSWORD: ${WEBTOP_PASSWORD:?Run init to generate .env}
       HOP_CONFIG_FOLDER: /config/hop-config
+      HOP_AUDIT_FOLDER: /config/hop-config/audit
       LAB_DB_HOST: postgres
       LAB_DB_PORT: "5432"
       LAB_DB_NAME: labdata

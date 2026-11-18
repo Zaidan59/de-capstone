@@ -1,7 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 export HOP_CONFIG_FOLDER="${HOP_CONFIG_FOLDER:-/config/hop-config}"
-mkdir -p "$HOP_CONFIG_FOLDER"
+export HOP_AUDIT_FOLDER="${HOP_AUDIT_FOLDER:-$HOP_CONFIG_FOLDER/audit}"
+mkdir -p "$HOP_CONFIG_FOLDER" "$HOP_AUDIT_FOLDER"
 cd /opt/hop
 PROJECT=/config/workspace/hop-project
 SECRETS_FILE="$HOP_CONFIG_FOLDER/docker-secrets.json"
@@ -15,5 +16,6 @@ fi
 ./hop-conf.sh --environment-create --environment=docker-local \
   --environment-project=capstone-local --environment-purpose=Development \
   --environment-config-files="$PROJECT/environments/docker-local.json,$SECRETS_FILE"
+./hop-conf.sh -dp=capstone-local -de=docker-local
 ./hop-conf.sh --project=capstone-local --export-metadata=/config/workspace/metadata-export.json || true
 echo 'Hop project capstone-local and environment docker-local registered.'

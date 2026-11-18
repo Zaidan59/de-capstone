@@ -45,7 +45,11 @@ Generate file `.env` lokal dengan password acak:
   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\lab.ps1 init
   ```
 > [!IMPORTANT]
-> File `.env` bersifat lokal/privat dan **tidak boleh di-commit** ke Git. Mengubah password di `.env` setelah volume Docker pertama kali terbuat tidak otomatis mengubah password user di dalam volume `pg_data`/`mysql_data`.
+> File `.env` bersifat lokal/privat dan **tidak boleh di-commit** ke Git. Mengubah atau membuat ulang `.env` (misalnya saat *clone* ulang di PC yang sama) setelah volume Docker pertama kali terbuat tidak otomatis mengubah password di dalam volume `pg_data`/`mysql_data`—dan bisa memicu error `Access denied` / `password authentication failed`. Jika ingin reset bersih volume DB agar sinkron dengan `.env` baru:
+> ```bash
+> docker compose down
+> docker volume rm de-capstone-lab_mysql_data de-capstone-lab_pg_data
+> ```
 
 ### 4. Nyalakan Layanan Inti (`up core`)
 Membangun dan menjalankan PostgreSQL 16, MySQL 8.4, CloudBeaver, serta Webtop Workbench (VSCodium + Apache Hop 2.19 + MySQL JDBC driver + Python + Java 21):
@@ -59,21 +63,41 @@ Membangun dan menjalankan PostgreSQL 16, MySQL 8.4, CloudBeaver, serta Webtop Wo
   ```
 
 ### 5. Verifikasi, Setup Apache Hop & Muat Data Sumber
-Jalankan secara berurutan:
+Tunggu beberapa detik setelah `up core` selesai hingga kontainer `workbench` siap, lalu jalankan secara berurutan:
 - **Linux / macOS / Git Bash**:
   ```bash
   bash scripts/lab.sh preflight
-  bash scripts/lab.sh hop-demo     # Registrasi project Hop + uji pipeline baseline (60 baris)
+  bash scripts/lab.sh hop-demo     # Registrasi project Hop (capstone-local) + uji pipeline baseline (60 baris)
   bash scripts/lab.sh seed-food    # Muat 17 tabel harga pangan ke MySQL labsource
-  docker compose exec -T -u abc workbench python /config/workspace/python/fetch_open_sources.py
+  # Jalankan master workflow Apache Hop untuk ingest semua sumber yang tersedia -> PostgreSQL raw.*:
+  docker compose exec -T -u abc workbench bash -lc 'cd /opt/hop && ./hop-run.sh -j capstone-local -e docker-local -r local -f /config/workspace/hop-project/workflows/wf_ingest_all_sources.hwf'
+  # Opsional: segarkan file snapshot CSV API di workspace/data/ sesuai sumbernya:
+  docker compose exec -T -u abc workbench python /config/workspace/python/fetch_openmeteo_weather.py
+  docker compose exec -T -u abc workbench python /config/workspace/python/fetch_bmkg_forecast.py
+  docker compose exec -T -u abc workbench python /config/workspace/python/fetch_fx_usd_idr.py
+  docker compose exec -T -u abc workbench python /config/workspace/python/fetch_hbkn_holidays.py
   ```
 - **Windows PowerShell**:
   ```powershell
   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\lab.ps1 preflight
   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\lab.ps1 hop-demo
   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\lab.ps1 seed-food
-  docker compose exec -T -u abc workbench python /config/workspace/python/fetch_open_sources.py
+  docker compose exec -T -u abc workbench bash -lc "cd /opt/hop && ./hop-run.sh -j capstone-local -e docker-local -r local -f /config/workspace/hop-project/workflows/wf_ingest_all_sources.hwf"
+  # Opsional: segarkan snapshot CSV API (Open-Meteo, BMKG, USD/IDR, HBKN)
+  docker compose exec -T -u abc workbench python /config/workspace/python/fetch_openmeteo_weather.py
+  docker compose exec -T -u abc workbench python /config/workspace/python/fetch_bmkg_forecast.py
+  docker compose exec -T -u abc workbench python /config/workspace/python/fetch_fx_usd_idr.py
+  docker compose exec -T -u abc workbench python /config/workspace/python/fetch_hbkn_holidays.py
   ```
+> **Pipeline Hop yang sudah tersedia (`wf_ingest_all_sources.hwf`):**
+> - `pl_ingest_pihps_mysql.hpl` (`SRC-01..02`, MySQL `labsource`) → `raw.pihps_market_prices`
+> - `pl_ingest_pihps_produsen.hpl` (`SRC-03`, CSV produsen Jabar/Jateng) → `raw.pihps_produsen_prices` *(CSV produsen `bawang_putih` hanya memiliki kolom Kalut & NTB)*
+> - `pl_ingest_info_pangan_jkt.hpl` (`SRC-04`, `info_pangan_jkt.xlsx`) → `raw.info_pangan_jkt`
+> - `pl_ingest_openmeteo_archive.hpl` & `pl_ingest_openmeteo_live.hpl` (`SRC-05..07`) → `raw.openmeteo_archive`, `raw.openmeteo_live`
+> - `pl_ingest_bmkg.hpl` (`SRC-08`, Live API BMKG) → `raw.bmkg_forecast`
+> - `pl_ingest_fx.hpl` (`SRC-09`, `bi_jisdor_daily.csv`) → `raw.fx_usd_idr`
+> - `pl_ingest_hbkn.hpl` (`SRC-13`, `ref_hbkn_calendar.csv`) → `raw.hbkn_calendar`
+>
 > **Catatan volume lama**: Pada clone baru, `sql/postgres-init/01-create.sql`, `02-demo.sql`, dan `03-capstone-infra.sql` (schema `curated` & role RBAC `etl_writer`/`tpid_analyst`) berjalan otomatis saat volume PostgreSQL dibuat pertama kali. Jika Anda meng-update repo dengan volume `pg_data` yang sudah terlanjur ada, jalankan sekali:
 > ```bash
 > docker compose exec -T postgres psql -U labuser -d labdata < sql/postgres-init/03-capstone-infra.sql
@@ -97,7 +121,7 @@ Semua port hanya di-bind ke `127.0.0.1`:
 > Karena CloudBeaver berjalan di dalam Docker network `labnet`, **jangan gunakan `localhost`**:
 > - **PostgreSQL**: Host `postgres` | Port `5432` | DB `labdata` | User `labuser` | Password `POSTGRES_PASSWORD` (`.env`)
 > - **MySQL**: Host `mysql` | Port `3306` | DB `labsource` | User `labmysql` | Password `MYSQL_APP_PASSWORD` (`.env`, bukan `MYSQL_ROOT_PASSWORD`)
->   - Di tab **Driver Properties**, atur **`allowPublicKeyRetrieval` = `TRUE`** agar tidak terkena error `Public Key Retrieval is not allowed` pada MySQL 8.4.
+>   - Di tab **Driver Properties**, atur **`allowPublicKeyRetrieval` = `TRUE`** dan **`useSSL` = `FALSE`** agar tidak terkena error `Public Key Retrieval is not allowed` pada MySQL 8.4.
 
 ---
 
@@ -119,7 +143,7 @@ de-capstone/
     ├── data/                       # Dataset pangan, cuaca Open-Meteo, snapshot BMKG, kurs USD/IDR, HBKN
     ├── hop-project/                # Proyek Apache Hop 2.19 (environments, metadata, pipelines, workflows)
     ├── java/                       # Smoke check Java 21 (SalesCheck.java)
-    └── python/                     # Script loader & fetcher (load_food_to_mysql.py, fetch_open_sources.py)
+    └── python/                     # Script loader & fetcher per sumber (load_food_to_mysql.py, fetch_*.py)
 ```
 
 ---

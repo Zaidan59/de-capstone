@@ -46,4 +46,5 @@ ENV HOP_HOME=/opt/hop
 # Do not override Webtop's init/entrypoint: it starts the remote desktop service.
 
 ENV HOP_CONFIG_FOLDER=/config/hop-config
+ENV HOP_AUDIT_FOLDER=/config/hop-config/audit
 ENV DONT_PROMPT_WSL_INSTALL=1
