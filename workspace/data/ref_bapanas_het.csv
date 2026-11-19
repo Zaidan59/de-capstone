@@ -1,0 +1,13 @@
+reg_id,komoditas,varian_mutu,jenis_batas,batas_bawah_rp,batas_atas_rp,dasar_regulasi,valid_from,valid_to,is_current
+REG-01,Beras,Medium,HET Konsumen Zona 1,0,9450,Permendag No. 57/M-DAG/PER/8/2017,2022-01-01,2023-03-29,False
+REG-02,Beras,Medium,HET Konsumen Zona 1,0,10900,Perbadan No. 7 Tahun 2023,2023-03-30,2024-06-04,False
+REG-03,Beras,Medium,HET Konsumen Zona 1,0,12500,Perbadan No. 5 Tahun 2024,2024-06-05,2025-08-21,False
+REG-04,Beras,Medium,HET Konsumen Zona 1,0,13500,Kepka Bapanas No. 299 Tahun 2025,2025-08-22,9999-12-31,True
+REG-05,Beras,Premium,HET Konsumen Zona 1,0,12800,Permendag No. 57/M-DAG/PER/8/2017,2022-01-01,2023-03-29,False
+REG-06,Beras,Premium,HET Konsumen Zona 1,0,13900,Perbadan No. 7 Tahun 2023,2023-03-30,2024-06-04,False
+REG-07,Beras,Premium,HET Konsumen Zona 1,0,14900,Perbadan No. 5 Tahun 2024,2024-06-05,2025-08-21,False
+REG-08,Beras,Premium,HET Konsumen Zona 1,0,14900,Kepka Bapanas No. 299 Tahun 2025,2025-08-22,9999-12-31,True
+REG-09,Cabai Rawit Merah,Umum,HAP Konsumen,40000,57000,Perbadan No. 11/2022 jo. Perbadan No. 12/2024,2022-01-01,9999-12-31,True
+REG-10,Cabai Merah Keriting,Umum,HAP Konsumen,37000,55000,Perbadan No. 11/2022 jo. Perbadan No. 12/2024,2022-01-01,9999-12-31,True
+REG-11,Bawang Merah,Umum,HAP Konsumen,36500,41500,Perbadan No. 11/2022 jo. Perbadan No. 12/2024,2022-01-01,9999-12-31,True
+REG-12,Bawang Putih,Umum,HAP Konsumen,0,40000,Perbadan No. 11/2022 jo. Perbadan No. 12/2024,2022-01-01,9999-12-31,True

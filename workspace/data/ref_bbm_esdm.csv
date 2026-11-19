@@ -1,0 +1,5 @@
+bbm_id,jenis_bbm,kategori_bbm,harga_per_liter,dasar_regulasi,valid_from,valid_to,is_current
+BBM-01,Biosolar,JBT (BBM Subsidi),5150,Kepmen ESDM No. 37.K/HK.02/MEM.M/2022,2022-01-01,2022-09-02,False
+BBM-02,Pertalite,JBKP (BBM Penugasan),7650,Kepmen ESDM No. 37.K/HK.02/MEM.M/2022,2022-01-01,2022-09-02,False
+BBM-03,Biosolar,JBT (BBM Subsidi),6800,Kepmen ESDM No. 218.K/MG.01/MEM.M/2022,2022-09-03,9999-12-31,True
+BBM-04,Pertalite,JBKP (BBM Penugasan),10000,Kepmen ESDM No. 218.K/MG.01/MEM.M/2022,2022-09-03,9999-12-31,True
