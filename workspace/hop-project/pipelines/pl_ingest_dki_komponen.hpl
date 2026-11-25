@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pipeline>
+  <info>
+    <name>pl_ingest_dki_komponen</name>
+    <name_sync_with_filename>Y</name_sync_with_filename>
+    <description>SRC-04 (Monthly): Load DKI Jakarta monthly staple food prices Excel into raw.dki_harga_pokok_bulanan</description>
+    <extended_description/>
+    <pipeline_version/>
+    <pipeline_type>Normal</pipeline_type>
+    <parameters/>
+    <capture_transform_performance>N</capture_transform_performance>
+    <transform_performance_capturing_delay>1000</transform_performance_capturing_delay>
+    <transform_performance_capturing_size_limit>100</transform_performance_capturing_size_limit>
+    <created_user>-</created_user>
+    <created_date>2026/11/25 13:35:00.000</created_date>
+    <modified_user>-</modified_user>
+    <modified_date>2026/11/25 13:35:00.000</modified_date>
+  </info>
+  <notepads/>
+  <order>
+    <hop>
+      <from>Read DKI Komponen XLSX</from>
+      <to>Write raw.dki_harga_pokok_bulanan</to>
+      <enabled>Y</enabled>
+    </hop>
+  </order>
+  <transform>
+    <name>Read DKI Komponen XLSX</name>
+    <type>ExcelInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning><method>none</method><schema_name/></partitioning>
+    <accept_filenames>N</accept_filenames>
+    <add_to_result_filenames>Y</add_to_result_filenames>
+    <bad_line_files_extension>warning</bad_line_files_extension>
+    <error_ignored>N</error_ignored>
+    <error_line_files_extension>error</error_line_files_extension>
+    <error_line_skipped>N</error_line_skipped>
+    <fields>
+      <field><length>-1</length><name>periode_data</name><precision>-1</precision><repeat>N</repeat><trim_type>both</trim_type><type>String</type></field>
+      <field><length>-1</length><name>wilayah</name><precision>-1</precision><repeat>N</repeat><trim_type>both</trim_type><type>String</type></field>
+      <field><length>-1</length><name>komoditas</name><precision>-1</precision><repeat>N</repeat><trim_type>both</trim_type><type>String</type></field>
+      <field><length>-1</length><name>harga_raw</name><precision>-1</precision><repeat>N</repeat><trim_type>both</trim_type><type>String</type></field>
+    </fields>
+    <file>
+      <file_required>Y</file_required>
+      <filemask/>
+      <include_subfolders>N</include_subfolders>
+      <name>${PROJECT_HOME}/../data/data-harga-bahan-pokok-di-provinsi-dki-jakarta-komponen-data.xlsx</name>
+    </file>
+    <header>Y</header>
+    <ignore_fields>N</ignore_fields>
+    <limit>0</limit>
+    <line_number_files_extension>line</line_number_files_extension>
+    <noempty>Y</noempty>
+    <sheetrownumfield/>
+    <sheets>
+      <sheet>
+        <name>Data</name>
+        <startcol>0</startcol>
+        <startrow>0</startrow>
+      </sheet>
+    </sheets>
+    <shortFileFieldName/>
+    <spreadsheet_type>SAX_POI</spreadsheet_type>
+    <stoponempty>N</stoponempty>
+    <strict_types>N</strict_types>
+    <attributes/>
+    <GUI><xloc>144</xloc><yloc>128</yloc></GUI>
+  </transform>
+  <transform>
+    <name>Write raw.dki_harga_pokok_bulanan</name>
+    <type>TableOutput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning><method>none</method><schema_name/></partitioning>
+    <commit>1000</commit>
+    <connection>lab-postgres</connection>
+    <fields>
+      <field><column_name>periode_data</column_name><stream_name>periode_data</stream_name></field>
+      <field><column_name>wilayah</column_name><stream_name>wilayah</stream_name></field>
+      <field><column_name>komoditas</column_name><stream_name>komoditas</stream_name></field>
+      <field><column_name>harga_raw</column_name><stream_name>harga_raw</stream_name></field>
+    </fields>
+    <ignore_errors>N</ignore_errors>
+    <partitioning_daily>N</partitioning_daily><partitioning_enabled>N</partitioning_enabled><partitioning_monthly>Y</partitioning_monthly>
+    <return_keys>N</return_keys><specify_fields>Y</specify_fields>
+    <schema>raw</schema><table>dki_harga_pokok_bulanan</table>
+    <tablename_in_field>N</tablename_in_field><tablename_in_table>Y</tablename_in_table>
+    <truncate>Y</truncate><use_batch>Y</use_batch>
+    <attributes/>
+    <GUI><xloc>416</xloc><yloc>128</yloc></GUI>
+  </transform>
+  <transform_error_handling/>
+  <attributes/>
+</pipeline>

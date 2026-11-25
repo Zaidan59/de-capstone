@@ -188,6 +188,8 @@
     <applicationType>TEXT PLAIN</applicationType>
     <connectionTimeout>15000</connectionTimeout>
     <readTimeout>15000</readTimeout>
+    <retryTimes>3</retryTimes>
+    <retryDelayMs>2000</retryDelayMs>
     <method>GET</method>
     <url/>
     <urlInField>Y</urlInField>

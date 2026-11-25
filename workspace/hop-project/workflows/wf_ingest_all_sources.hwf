@@ -2,34 +2,32 @@
 <workflow>
   <name>wf_ingest_all_sources</name>
   <name_sync_with_filename>Y</name_sync_with_filename>
-  <description>Ensure raw.* tables exist and ingest all currently available Capstone Group A03 sources (SRC-01..09, SRC-13)</description>
+  <description>Ensure raw.* &amp; ops tables exist, ingest all 13 Capstone Group A03 sources (SRC-01..13), and log run summary to ops.pipeline_runs</description>
   <extended_description/>
   <workflow_version>1.0</workflow_version>
   <workflow_status>0</workflow_status>
   <created_user>-</created_user>
   <created_date>2026/11/18 14:10:00.000</created_date>
   <modified_user>-</modified_user>
-  <modified_date>2026/11/18 14:10:00.000</modified_date>
+  <modified_date>2026/11/25 13:35:00.000</modified_date>
   <parameters/>
   <actions>
     <action>
-      <name>Start</name>
-      <description/>
-      <type>SPECIAL</type>
-      <attributes/>
+      <name>Start</name><description/><type>SPECIAL</type><attributes/>
       <repeat>N</repeat><schedulerType>0</schedulerType><intervalSeconds>0</intervalSeconds><intervalMinutes>60</intervalMinutes><hour>12</hour><minutes>0</minutes><weekDay>1</weekDay><DayOfMonth>1</DayOfMonth>
-      <parallel>N</parallel>
-      <xloc>48</xloc><yloc>96</yloc>
-      <attributes_hac/>
+      <parallel>N</parallel><xloc>48</xloc><yloc>96</yloc><attributes_hac/>
     </action>
     <action>
-      <name>Ensure raw tables</name>
-      <description/>
-      <type>SQL</type>
-      <attributes/>
-      <connection>lab-postgres</connection>
-      <sendOneStatement>F</sendOneStatement>
-      <sql>CREATE TABLE IF NOT EXISTS raw.bmkg_forecast (
+      <name>Ensure raw tables</name><description/><type>SQL</type><attributes/>
+      <connection>lab-postgres</connection><sendOneStatement>F</sendOneStatement>
+      <sql>CREATE TABLE IF NOT EXISTS ops.pipeline_watermarks (
+  source_name text PRIMARY KEY,
+  last_watermark text,
+  data_version text,
+  last_run_id bigint,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS raw.bmkg_forecast (
   region_key text NOT NULL,
   region_name text NOT NULL,
   adm4_code text NOT NULL,
@@ -97,6 +95,13 @@ CREATE TABLE IF NOT EXISTS raw.info_pangan_jkt (
   harga_rata_rata_raw text,
   ingested_at timestamptz NOT NULL DEFAULT now()
 );
+CREATE TABLE IF NOT EXISTS raw.dki_harga_pokok_bulanan (
+  periode_data text,
+  wilayah text,
+  komoditas text,
+  harga_raw text,
+  ingested_at timestamptz NOT NULL DEFAULT now()
+);
 CREATE TABLE IF NOT EXISTS raw.pihps_market_prices (
   market_tier text NOT NULL,
   commodity text NOT NULL,
@@ -112,13 +117,55 @@ CREATE TABLE IF NOT EXISTS raw.pihps_produsen_prices (
   jawa_barat double precision,
   jawa_tengah double precision,
   ingested_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS raw.ref_bbm_esdm (
+  bbm_id text NOT NULL,
+  jenis_bbm text,
+  kategori_bbm text,
+  harga_per_liter double precision,
+  dasar_regulasi text,
+  valid_from text,
+  valid_to text,
+  is_current boolean,
+  ingested_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS raw.ref_bapanas_het (
+  reg_id text NOT NULL,
+  komoditas text,
+  varian_mutu text,
+  jenis_batas text,
+  batas_bawah_rp double precision,
+  batas_atas_rp double precision,
+  dasar_regulasi text,
+  valid_from text,
+  valid_to text,
+  is_current boolean,
+  ingested_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS raw.ref_supply_corridor (
+  source_id text,
+  corridor_id text NOT NULL,
+  commodity_code text,
+  komoditas text,
+  region_code text,
+  kabupaten_sentra text,
+  provinsi_sentra text,
+  pasar_tujuan text,
+  latitude_ref double precision,
+  longitude_ref double precision,
+  corridor_type text,
+  verification_status text,
+  active_for_join boolean,
+  bobot_kontribusi_pasokan double precision,
+  bobot_scope text,
+  bobot_period text,
+  evidence_row_ids text,
+  source_url text,
+  notes text,
+  ingested_at timestamptz NOT NULL DEFAULT now()
 );</sql>
-      <sqlfilename/>
-      <sqlfromfile>F</sqlfromfile>
-      <useVariableSubstitution>F</useVariableSubstitution>
-      <parallel>N</parallel>
-      <xloc>192</xloc><yloc>96</yloc>
-      <attributes_hac/>
+      <sqlfilename/><sqlfromfile>F</sqlfromfile><useVariableSubstitution>F</useVariableSubstitution>
+      <parallel>N</parallel><xloc>192</xloc><yloc>96</yloc><attributes_hac/>
     </action>
     <action>
       <name>pl_ingest_bmkg.hpl</name><description/><type>PIPELINE</type><attributes/>
@@ -175,13 +222,22 @@ CREATE TABLE IF NOT EXISTS raw.pihps_produsen_prices (
       <parallel>N</parallel><xloc>352</xloc><yloc>208</yloc><attributes_hac/>
     </action>
     <action>
+      <name>pl_ingest_dki_komponen.hpl</name><description/><type>PIPELINE</type><attributes/>
+      <filename>${PROJECT_HOME}/pipelines/pl_ingest_dki_komponen.hpl</filename>
+      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
+      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
+      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
+      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
+      <parallel>N</parallel><xloc>192</xloc><yloc>208</yloc><attributes_hac/>
+    </action>
+    <action>
       <name>pl_ingest_pihps_mysql.hpl</name><description/><type>PIPELINE</type><attributes/>
       <filename>${PROJECT_HOME}/pipelines/pl_ingest_pihps_mysql.hpl</filename>
       <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
       <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
       <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
       <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
-      <parallel>N</parallel><xloc>192</xloc><yloc>208</yloc><attributes_hac/>
+      <parallel>N</parallel><xloc>192</xloc><yloc>320</yloc><attributes_hac/>
     </action>
     <action>
       <name>pl_ingest_pihps_produsen.hpl</name><description/><type>PIPELINE</type><attributes/>
@@ -190,11 +246,69 @@ CREATE TABLE IF NOT EXISTS raw.pihps_produsen_prices (
       <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
       <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
       <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
-      <parallel>N</parallel><xloc>192</xloc><yloc>320</yloc><attributes_hac/>
+      <parallel>N</parallel><xloc>352</xloc><yloc>320</yloc><attributes_hac/>
+    </action>
+    <action>
+      <name>pl_ingest_references.hpl</name><description/><type>PIPELINE</type><attributes/>
+      <filename>${PROJECT_HOME}/pipelines/pl_ingest_references.hpl</filename>
+      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
+      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
+      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
+      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
+      <parallel>N</parallel><xloc>528</xloc><yloc>320</yloc><attributes_hac/>
+    </action>
+    <action>
+      <name>Log ops.pipeline_runs &amp; watermarks</name><description/><type>SQL</type><attributes/>
+      <connection>lab-postgres</connection><sendOneStatement>F</sendOneStatement>
+      <sql>WITH counts AS (
+  SELECT
+    (SELECT COUNT(*) FROM raw.bmkg_forecast)
+    + (SELECT COUNT(*) FROM raw.openmeteo_live)
+    + (SELECT COUNT(*) FROM raw.openmeteo_archive)
+    + (SELECT COUNT(*) FROM raw.fx_usd_idr)
+    + (SELECT COUNT(*) FROM raw.hbkn_calendar)
+    + (SELECT COUNT(*) FROM raw.info_pangan_jkt)
+    + (SELECT COUNT(*) FROM raw.dki_harga_pokok_bulanan)
+    + (SELECT COUNT(*) FROM raw.pihps_market_prices)
+    + (SELECT COUNT(*) FROM raw.pihps_produsen_prices)
+    + (SELECT COUNT(*) FROM raw.ref_bbm_esdm)
+    + (SELECT COUNT(*) FROM raw.ref_bapanas_het)
+    + (SELECT COUNT(*) FROM raw.ref_supply_corridor) AS total_rows
+),
+ins_run AS (
+  INSERT INTO ops.pipeline_runs (pipeline_name, started_at, completed_at, status, rows_processed, message)
+  SELECT 'wf_ingest_all_sources', now(), now(), 'SUCCESS', total_rows,
+         'All 13 sources (12 raw tables) ingested cleanly'
+  FROM counts
+  RETURNING run_id
+)
+INSERT INTO ops.pipeline_watermarks (source_name, last_watermark, data_version, last_run_id, updated_at)
+SELECT v.src, v.wm, v.ver, r.run_id, now()
+FROM ins_run r
+CROSS JOIN (VALUES
+  ('raw.pihps_market_prices', (SELECT MAX(date_param) FROM raw.pihps_market_prices), '2022-01-01..2026-02-12'),
+  ('raw.pihps_produsen_prices', (SELECT MAX(date_param) FROM raw.pihps_produsen_prices), '2022-01-01..2026-02-12'),
+  ('raw.openmeteo_archive', (SELECT MAX(weather_date) FROM raw.openmeteo_archive), '2022-01-01..2026-02-12'),
+  ('raw.openmeteo_live', (SELECT MAX(weather_date) FROM raw.openmeteo_live), 'live-forecast'),
+  ('raw.bmkg_forecast', (SELECT MAX(local_datetime) FROM raw.bmkg_forecast), 'live-forecast'),
+  ('raw.fx_usd_idr', (SELECT MAX(rate_date) FROM raw.fx_usd_idr), 'daily-fx'),
+  ('raw.hbkn_calendar', (SELECT MAX(holiday_date) FROM raw.hbkn_calendar), '2022..2026'),
+  ('raw.dki_harga_pokok_bulanan', (SELECT MAX(periode_data) FROM raw.dki_harga_pokok_bulanan), '202501..202609'),
+  ('raw.ref_bbm_esdm', (SELECT MAX(valid_from) FROM raw.ref_bbm_esdm), 'scd2-v1'),
+  ('raw.ref_bapanas_het', (SELECT MAX(valid_from) FROM raw.ref_bapanas_het), 'scd2-v1'),
+  ('raw.ref_supply_corridor', 'COR-09', 'fdp-2024-v1')
+) AS v(src, wm, ver)
+ON CONFLICT (source_name) DO UPDATE
+SET last_watermark = EXCLUDED.last_watermark,
+    data_version = EXCLUDED.data_version,
+    last_run_id = EXCLUDED.last_run_id,
+    updated_at = EXCLUDED.updated_at;</sql>
+      <sqlfilename/><sqlfromfile>F</sqlfromfile><useVariableSubstitution>F</useVariableSubstitution>
+      <parallel>N</parallel><xloc>720</xloc><yloc>320</yloc><attributes_hac/>
     </action>
     <action>
       <name>Success</name><description/><type>SUCCESS</type><attributes/>
-      <parallel>N</parallel><xloc>400</xloc><yloc>320</yloc><attributes_hac/>
+      <parallel>N</parallel><xloc>880</xloc><yloc>320</yloc><attributes_hac/>
     </action>
   </actions>
   <hops>
@@ -205,9 +319,12 @@ CREATE TABLE IF NOT EXISTS raw.pihps_produsen_prices (
     <hop><from>pl_ingest_openmeteo_archive.hpl</from><to>pl_ingest_fx.hpl</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
     <hop><from>pl_ingest_fx.hpl</from><to>pl_ingest_hbkn.hpl</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
     <hop><from>pl_ingest_hbkn.hpl</from><to>pl_ingest_info_pangan_jkt.hpl</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>pl_ingest_info_pangan_jkt.hpl</from><to>pl_ingest_pihps_mysql.hpl</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
+    <hop><from>pl_ingest_info_pangan_jkt.hpl</from><to>pl_ingest_dki_komponen.hpl</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
+    <hop><from>pl_ingest_dki_komponen.hpl</from><to>pl_ingest_pihps_mysql.hpl</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
     <hop><from>pl_ingest_pihps_mysql.hpl</from><to>pl_ingest_pihps_produsen.hpl</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>pl_ingest_pihps_produsen.hpl</from><to>Success</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
+    <hop><from>pl_ingest_pihps_produsen.hpl</from><to>pl_ingest_references.hpl</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
+    <hop><from>pl_ingest_references.hpl</from><to>Log ops.pipeline_runs &amp; watermarks</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
+    <hop><from>Log ops.pipeline_runs &amp; watermarks</from><to>Success</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
   </hops>
   <notepads/>
   <attributes/>
