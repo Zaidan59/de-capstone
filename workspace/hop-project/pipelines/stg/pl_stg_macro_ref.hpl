@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pipeline>
+  <info>
+    <name>pl_stg_macro_ref</name>
+    <name_sync_with_filename>Y</name_sync_with_filename>
+    <description>Stage &amp; deduplicate USD/IDR FX rates and HBKN calendar into stg.fx_daily and stg.hbkn_daily</description>
+    <extended_description/>
+    <pipeline_version/>
+    <pipeline_type>Normal</pipeline_type>
+    <parameters/>
+    <capture_transform_performance>N</capture_transform_performance>
+    <transform_performance_capturing_delay>1000</transform_performance_capturing_delay>
+    <transform_performance_capturing_size_limit>100</transform_performance_capturing_size_limit>
+    <created_user>-</created_user>
+    <created_date>2026/11/26 10:22:00.000</created_date>
+    <modified_user>-</modified_user>
+    <modified_date>2026/11/26 10:22:00.000</modified_date>
+  </info>
+  <notepads/>
+  <order>
+    <hop>
+      <from>Read Clean FX</from>
+      <to>Write stg.fx_daily</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Read Deduplicated HBKN</from>
+      <to>Write stg.hbkn_daily</to>
+      <enabled>Y</enabled>
+    </hop>
+  </order>
+  <transform>
+    <name>Read Clean FX</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning><method>none</method><schema_name/></partitioning>
+    <connection>lab-postgres</connection>
+    <execute_each_row>N</execute_each_row>
+    <limit>0</limit>
+    <sql>SELECT DISTINCT ON (rate_date::date)
+       rate_date::date AS rate_date,
+       ROUND(usd_idr_rate::numeric, 4) AS usd_idr_rate,
+       COALESCE(source_api, 'SRC-09_FX') AS source_api
+FROM raw.fx_usd_idr
+WHERE rate_date IS NOT NULL
+  AND usd_idr_rate IS NOT NULL
+  AND usd_idr_rate &gt; 0
+ORDER BY rate_date::date, fetched_at DESC NULLS LAST</sql>
+    <variables_active>N</variables_active>
+    <attributes/>
+    <GUI><xloc>144</xloc><yloc>96</yloc></GUI>
+  </transform>
+  <transform>
+    <name>Write stg.fx_daily</name>
+    <type>TableOutput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning><method>none</method><schema_name/></partitioning>
+    <commit>1000</commit>
+    <connection>lab-postgres</connection>
+    <fields>
+      <field><column_name>rate_date</column_name><stream_name>rate_date</stream_name></field>
+      <field><column_name>usd_idr_rate</column_name><stream_name>usd_idr_rate</stream_name></field>
+      <field><column_name>source_api</column_name><stream_name>source_api</stream_name></field>
+    </fields>
+    <ignore_errors>N</ignore_errors>
+    <partitioning_daily>N</partitioning_daily>
+    <partitioning_enabled>N</partitioning_enabled>
+    <partitioning_monthly>Y</partitioning_monthly>
+    <return_keys>N</return_keys>
+    <specify_fields>Y</specify_fields>
+    <schema>stg</schema>
+    <table>fx_daily</table>
+    <tablename_in_field>N</tablename_in_field>
+    <tablename_in_table>Y</tablename_in_table>
+    <truncate>Y</truncate>
+    <use_batch>Y</use_batch>
+    <attributes/>
+    <GUI><xloc>432</xloc><yloc>96</yloc></GUI>
+  </transform>
+  <transform>
+    <name>Read Deduplicated HBKN</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning><method>none</method><schema_name/></partitioning>
+    <connection>lab-postgres</connection>
+    <execute_each_row>N</execute_each_row>
+    <limit>0</limit>
+    <sql>SELECT holiday_date::date AS holiday_date,
+       STRING_AGG(DISTINCT local_name, '; ' ORDER BY local_name) AS holiday_names,
+       MAX(hbkn_category) AS hbkn_category,
+       BOOL_OR(is_hbkn_major) AS is_hbkn_major
+FROM raw.hbkn_calendar
+WHERE holiday_date IS NOT NULL
+GROUP BY holiday_date::date</sql>
+    <variables_active>N</variables_active>
+    <attributes/>
+    <GUI><xloc>144</xloc><yloc>208</yloc></GUI>
+  </transform>
+  <transform>
+    <name>Write stg.hbkn_daily</name>
+    <type>TableOutput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning><method>none</method><schema_name/></partitioning>
+    <commit>1000</commit>
+    <connection>lab-postgres</connection>
+    <fields>
+      <field><column_name>holiday_date</column_name><stream_name>holiday_date</stream_name></field>
+      <field><column_name>holiday_names</column_name><stream_name>holiday_names</stream_name></field>
+      <field><column_name>hbkn_category</column_name><stream_name>hbkn_category</stream_name></field>
+      <field><column_name>is_hbkn_major</column_name><stream_name>is_hbkn_major</stream_name></field>
+    </fields>
+    <ignore_errors>N</ignore_errors>
+    <partitioning_daily>N</partitioning_daily>
+    <partitioning_enabled>N</partitioning_enabled>
+    <partitioning_monthly>Y</partitioning_monthly>
+    <return_keys>N</return_keys>
+    <specify_fields>Y</specify_fields>
+    <schema>stg</schema>
+    <table>hbkn_daily</table>
+    <tablename_in_field>N</tablename_in_field>
+    <tablename_in_table>Y</tablename_in_table>
+    <truncate>Y</truncate>
+    <use_batch>Y</use_batch>
+    <attributes/>
+    <GUI><xloc>432</xloc><yloc>208</yloc></GUI>
+  </transform>
+  <transform_error_handling/>
+  <attributes/>
+</pipeline>

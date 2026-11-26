@@ -169,7 +169,7 @@ CREATE TABLE IF NOT EXISTS raw.ref_supply_corridor (
     </action>
     <action>
       <name>pl_ingest_bmkg.hpl</name><description/><type>PIPELINE</type><attributes/>
-      <filename>${PROJECT_HOME}/pipelines/pl_ingest_bmkg.hpl</filename>
+      <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_bmkg.hpl</filename>
       <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
       <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
       <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
@@ -178,7 +178,7 @@ CREATE TABLE IF NOT EXISTS raw.ref_supply_corridor (
     </action>
     <action>
       <name>pl_ingest_openmeteo_live.hpl</name><description/><type>PIPELINE</type><attributes/>
-      <filename>${PROJECT_HOME}/pipelines/pl_ingest_openmeteo_live.hpl</filename>
+      <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_openmeteo_live.hpl</filename>
       <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
       <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
       <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
@@ -187,7 +187,7 @@ CREATE TABLE IF NOT EXISTS raw.ref_supply_corridor (
     </action>
     <action>
       <name>pl_ingest_openmeteo_archive.hpl</name><description/><type>PIPELINE</type><attributes/>
-      <filename>${PROJECT_HOME}/pipelines/pl_ingest_openmeteo_archive.hpl</filename>
+      <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_openmeteo_archive.hpl</filename>
       <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
       <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
       <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
@@ -196,7 +196,7 @@ CREATE TABLE IF NOT EXISTS raw.ref_supply_corridor (
     </action>
     <action>
       <name>pl_ingest_fx.hpl</name><description/><type>PIPELINE</type><attributes/>
-      <filename>${PROJECT_HOME}/pipelines/pl_ingest_fx.hpl</filename>
+      <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_fx.hpl</filename>
       <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
       <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
       <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
@@ -205,7 +205,7 @@ CREATE TABLE IF NOT EXISTS raw.ref_supply_corridor (
     </action>
     <action>
       <name>pl_ingest_hbkn.hpl</name><description/><type>PIPELINE</type><attributes/>
-      <filename>${PROJECT_HOME}/pipelines/pl_ingest_hbkn.hpl</filename>
+      <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_hbkn.hpl</filename>
       <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
       <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
       <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
@@ -214,7 +214,7 @@ CREATE TABLE IF NOT EXISTS raw.ref_supply_corridor (
     </action>
     <action>
       <name>pl_ingest_info_pangan_jkt.hpl</name><description/><type>PIPELINE</type><attributes/>
-      <filename>${PROJECT_HOME}/pipelines/pl_ingest_info_pangan_jkt.hpl</filename>
+      <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_info_pangan_jkt.hpl</filename>
       <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
       <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
       <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
@@ -223,7 +223,7 @@ CREATE TABLE IF NOT EXISTS raw.ref_supply_corridor (
     </action>
     <action>
       <name>pl_ingest_dki_komponen.hpl</name><description/><type>PIPELINE</type><attributes/>
-      <filename>${PROJECT_HOME}/pipelines/pl_ingest_dki_komponen.hpl</filename>
+      <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_dki_komponen.hpl</filename>
       <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
       <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
       <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
@@ -232,7 +232,7 @@ CREATE TABLE IF NOT EXISTS raw.ref_supply_corridor (
     </action>
     <action>
       <name>pl_ingest_pihps_mysql.hpl</name><description/><type>PIPELINE</type><attributes/>
-      <filename>${PROJECT_HOME}/pipelines/pl_ingest_pihps_mysql.hpl</filename>
+      <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_pihps_mysql.hpl</filename>
       <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
       <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
       <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
@@ -241,7 +241,7 @@ CREATE TABLE IF NOT EXISTS raw.ref_supply_corridor (
     </action>
     <action>
       <name>pl_ingest_pihps_produsen.hpl</name><description/><type>PIPELINE</type><attributes/>
-      <filename>${PROJECT_HOME}/pipelines/pl_ingest_pihps_produsen.hpl</filename>
+      <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_pihps_produsen.hpl</filename>
       <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
       <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
       <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
@@ -250,7 +250,7 @@ CREATE TABLE IF NOT EXISTS raw.ref_supply_corridor (
     </action>
     <action>
       <name>pl_ingest_references.hpl</name><description/><type>PIPELINE</type><attributes/>
-      <filename>${PROJECT_HOME}/pipelines/pl_ingest_references.hpl</filename>
+      <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_references.hpl</filename>
       <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
       <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
       <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>

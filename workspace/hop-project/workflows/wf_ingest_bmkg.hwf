@@ -71,7 +71,7 @@
       <description/>
       <type>PIPELINE</type>
       <attributes/>
-      <filename>${PROJECT_HOME}/pipelines/pl_ingest_bmkg.hpl</filename>
+      <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_bmkg.hpl</filename>
       <params_from_previous>N</params_from_previous>
       <exec_per_row>N</exec_per_row>
       <clear_rows>N</clear_rows>

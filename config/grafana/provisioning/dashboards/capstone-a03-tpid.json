@@ -1,0 +1,192 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "postgres", "uid": "de-postgres" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 1 }, { "color": "red", "value": 2 } ] }
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "de-postgres" },
+          "format": "table",
+          "rawSql": "SELECT COUNT(*)::int AS alert_high_days FROM semantic.v_kpi_early_intervention_alert WHERE alert_level = 'ALERT_HIGH' AND full_date >= (SELECT MAX(full_date) - 30 FROM semantic.v_kpi_early_intervention_alert WHERE jkt_tradisional_price_rp IS NOT NULL);",
+          "refId": "A"
+        }
+      ],
+      "title": "KPI 3: ALERT_HIGH Events (Last 30 Price Days)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "de-postgres" },
+      "fieldConfig": { "defaults": { "decimals": 2, "unit": "percent" } },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "de-postgres" },
+          "format": "table",
+          "rawSql": "SELECT ROUND(AVG(margin_pct_vs_produsen), 2) AS avg_margin_pct FROM semantic.v_kpi_margin_ratio WHERE full_date = (SELECT MAX(full_date) FROM semantic.v_kpi_margin_ratio);",
+          "refId": "A"
+        }
+      ],
+      "title": "KPI 1: Latest Avg Supply Chain Margin % (COR-01..04)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "de-postgres" },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 3,
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 0.4 }, { "color": "red", "value": 0.7 } ] }
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "de-postgres" },
+          "format": "table",
+          "rawSql": "SELECT ROUND(MAX(weather_logistics_risk_index), 3) AS max_risk_idx FROM semantic.v_kpi_weather_logistics_risk WHERE full_date = (SELECT MAX(full_date) FROM semantic.v_kpi_weather_logistics_risk);",
+          "refId": "A"
+        }
+      ],
+      "title": "KPI 2: Latest Max Weather & Logistics Risk Index",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "de-postgres" },
+      "fieldConfig": { "defaults": {} },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "de-postgres" },
+          "format": "table",
+          "rawSql": "SELECT COUNT(*)::int AS pass_checks FROM semantic.v_dq_reconciliation_latest WHERE status = 'PASS';",
+          "refId": "A"
+        }
+      ],
+      "title": "Governance: Reconciliation Checks PASSED",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "de-postgres" },
+      "fieldConfig": { "defaults": { "decimals": 2 } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "id": 5,
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "de-postgres" },
+          "format": "time_series",
+          "rawSql": "SELECT full_date::timestamp AS time, corridor_id || ' (' || commodity_code || ')' AS metric, supply_chain_margin_ratio AS value FROM semantic.v_kpi_margin_ratio ORDER BY 1;",
+          "refId": "A"
+        }
+      ],
+      "title": "KPI 1: Supply Chain Margin Ratio (Observed Corridors COR-01..04)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "de-postgres" },
+      "fieldConfig": { "defaults": { "decimals": 3, "max": 1, "min": 0 } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "id": 6,
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "de-postgres" },
+          "format": "time_series",
+          "rawSql": "SELECT full_date::timestamp AS time, corridor_id || ' (' || supplier_region || ')' AS metric, weather_logistics_risk_index AS value FROM semantic.v_kpi_weather_logistics_risk ORDER BY 1;",
+          "refId": "A"
+        }
+      ],
+      "title": "KPI 2: Supplier Extreme Weather & Logistics Risk Index",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "de-postgres" },
+      "fieldConfig": { "defaults": { "unit": "currencyIDR" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "id": 7,
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "de-postgres" },
+          "format": "time_series",
+          "rawSql": "SELECT full_date::timestamp AS time, commodity_name || ' (Tradisional JKT)' AS metric, jkt_tradisional_price_rp AS value FROM semantic.v_kpi_early_intervention_alert WHERE jkt_tradisional_price_rp IS NOT NULL ORDER BY 1;",
+          "refId": "A"
+        }
+      ],
+      "title": "KPI 3: DKI Jakarta Tradisional Price Trend (5 Strategic Commodities)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "de-postgres" },
+      "fieldConfig": { "defaults": {} },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "id": 8,
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "de-postgres" },
+          "format": "table",
+          "rawSql": "SELECT full_date, commodity_name, jkt_tradisional_price_rp, jkt_tradisional_ma14_rp, jkt_price_dev_ma14_pct, het_batas_atas_rp, is_above_het, any_supplier_extreme_weather, is_hbkn_major, is_pre_hbkn_7d, alert_level FROM semantic.v_kpi_early_intervention_alert WHERE alert_level <> 'NORMAL' ORDER BY full_date DESC, jkt_price_dev_ma14_pct DESC LIMIT 50;",
+          "refId": "A"
+        }
+      ],
+      "title": "KPI 3: Early Market Intervention Alerts (ALERT_HIGH / ALERT_WATCH)",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "de-postgres" },
+      "fieldConfig": { "defaults": {} },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 20 },
+      "id": 9,
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "de-postgres" },
+          "format": "table",
+          "rawSql": "SELECT layer_pair, source_table, target_table, rows_in, rows_accepted, rows_quarantined, rows_filtered, delta_rows, status, checked_at FROM semantic.v_dq_reconciliation_latest LIMIT 20;",
+          "refId": "A"
+        }
+      ],
+      "title": "DQ & Row Reconciliation Log",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "de-postgres" },
+      "fieldConfig": { "defaults": {} },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 20 },
+      "id": 10,
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "de-postgres" },
+          "format": "table",
+          "rawSql": "SELECT manifest_id, workflow_name, step_name, rows_in, rows_accepted, rows_quarantined, status, fallback_used, duration_ms, completed_at FROM semantic.v_ops_run_slo LIMIT 20;",
+          "refId": "A"
+        }
+      ],
+      "title": "DataOps Pipeline Run Manifest & SLO",
+      "type": "table"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["capstone", "group-a03", "tpid", "dki-jakarta"],
+  "templating": { "list": [] },
+  "time": { "from": "2022-01-01T00:00:00.000Z", "to": "2026-12-01T00:00:00.000Z" },
+  "title": "Group A03 - TPID DKI Jakarta Food Supply & Early Intervention",
+  "uid": "capstone-a03-tpid",
+  "version": 1
+}

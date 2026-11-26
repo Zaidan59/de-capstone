@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pipeline>
+  <info>
+    <name>pl_dq_and_reconcile</name>
+    <name_sync_with_filename>Y</name_sync_with_filename>
+    <description>Run DQ-01..DQ-07 checks, populate stg.quarantine_records, dq.quality_issues, and dq.reconciliation_log</description>
+    <extended_description/>
+    <pipeline_version/>
+    <pipeline_type>Normal</pipeline_type>
+    <parameters/>
+    <capture_transform_performance>N</capture_transform_performance>
+    <transform_performance_capturing_delay>1000</transform_performance_capturing_delay>
+    <transform_performance_capturing_size_limit>100</transform_performance_capturing_size_limit>
+    <created_user>-</created_user>
+    <created_date>2026/11/26 10:24:00.000</created_date>
+    <modified_user>-</modified_user>
+    <modified_date>2026/11/26 10:24:00.000</modified_date>
+  </info>
+  <notepads/>
+  <order>
+    <hop>
+      <from>Evaluate Quarantine Candidates</from>
+      <to>Write stg.quarantine_records</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Evaluate DQ Rules Summary</from>
+      <to>Write dq.quality_issues</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Compute Layer Reconciliation</from>
+      <to>Write dq.reconciliation_log</to>
+      <enabled>Y</enabled>
+    </hop>
+  </order>
+  <transform>
+    <name>Evaluate Quarantine Candidates</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning><method>none</method><schema_name/></partitioning>
+    <connection>lab-postgres</connection>
+    <execute_each_row>N</execute_each_row>
+    <limit>0</limit>
+    <sql>WITH run_ctx AS (SELECT to_char(now(), 'YYYYMMDD_HH24MISS') AS rid),
+pihps_unpiv AS (
+  SELECT date_param, market_tier, commodity, 'DKI_JAKARTA' AS prov, dki_jakarta AS val FROM raw.pihps_market_prices
+  UNION ALL SELECT date_param, market_tier, commodity, 'JAWA_BARAT', jawa_barat FROM raw.pihps_market_prices
+  UNION ALL SELECT date_param, market_tier, commodity, 'JAWA_TENGAH', jawa_tengah FROM raw.pihps_market_prices
+  UNION ALL SELECT date_param, 'produsen', commodity, 'JAWA_BARAT', jawa_barat FROM raw.pihps_produsen_prices
+  UNION ALL SELECT date_param, 'produsen', commodity, 'JAWA_TENGAH', jawa_tengah FROM raw.pihps_produsen_prices
+),
+pihps_lag AS (
+  SELECT *, LAG(val) OVER (PARTITION BY market_tier, commodity, prov ORDER BY date_param) AS prev_val
+  FROM pihps_unpiv
+),
+q_all AS (
+  -- DQ-01 / DQ-03: PIHPS nulls or non-positive
+  SELECT 'raw.pihps_*' AS source_table,
+         COALESCE(date_param,'?') || '|' || commodity || '|' || prov || '|' || market_tier AS business_key,
+         CASE WHEN date_param IS NULL OR val IS NULL THEN 'DQ-01' ELSE 'DQ-03' END AS rule_id,
+         'ERROR' AS severity,
+         'price=' || COALESCE(val::text, 'NULL') AS raw_payload,
+         CASE WHEN date_param IS NULL OR val IS NULL THEN 'Null mandatory price/date in PIHPS' ELSE 'Non-positive price &lt;= 0 in PIHPS' END AS reason
+  FROM pihps_unpiv
+  WHERE date_param IS NULL OR val IS NULL OR val &lt;= 0
+
+  UNION ALL
+  -- DQ-04: PIHPS spike &gt; 300%
+  SELECT 'raw.pihps_*',
+         date_param || '|' || commodity || '|' || prov || '|' || market_tier,
+         'DQ-04',
+         'ERROR',
+         'price=' || val::text || ';prev=' || prev_val::text,
+         'Day-over-day price jump exceeds 300%'
+  FROM pihps_lag
+  WHERE prev_val &gt; 0 AND val &gt; 0 AND ABS((val - prev_val) / prev_val) &gt; 3.0
+
+  UNION ALL
+  -- DQ-03: DKI Komponen / Info Pangan strategic non-numeric or &lt;= 0
+  SELECT 'raw.dki_harga_pokok_bulanan',
+         COALESCE(periode_data,'?') || '|' || COALESCE(wilayah,'?') || '|' || komoditas,
+         'DQ-03',
+         'ERROR',
+         'harga_raw=' || COALESCE(harga_raw, 'NULL'),
+         'Non-numeric or non-positive strategic price (e.g. N/A)'
+  FROM raw.dki_harga_pokok_bulanan
+  WHERE komoditas IN ('BAWANG MERAH','BAWANG PUTIH','BERAS IR. I (IR 64)','BERAS MEDIUM','BERAS SETRA I/PREMIUM','CABE MERAH KERITING','CABE RAWIT MERAH')
+    AND (harga_raw IS NULL OR replace(trim(harga_raw), ',', '') !~ '^[0-9]+(\.[0-9]+)?$' OR replace(trim(harga_raw), ',', '')::numeric &lt;= 0)
+
+  UNION ALL
+  -- DQ-02: BMKG sentinel 8888/9999 or impossible values
+  SELECT 'raw.bmkg_forecast',
+         region_key || '|' || COALESCE(local_datetime,'?'),
+         'DQ-02',
+         'ERROR',
+         't=' || COALESCE(t_celsius::text,'NULL') || ';hu=' || COALESCE(hu_pct::text,'NULL') || ';tp=' || COALESCE(tp_mm::text,'NULL') || ';ws=' || COALESCE(ws_kmh::text,'NULL'),
+         'BMKG sensor sentinel code (8888/9999) or out-of-range weather value'
+  FROM raw.bmkg_forecast
+  WHERE local_datetime IS NULL
+     OR t_celsius IS NULL OR t_celsius IN (8888, 9999)
+     OR tp_mm IS NULL OR tp_mm IN (8888, 9999) OR tp_mm &lt; 0
+     OR hu_pct IN (8888, 9999) OR hu_pct &lt; 0 OR hu_pct &gt; 100
+     OR ws_kmh IN (8888, 9999) OR ws_kmh &lt; 0
+
+  UNION ALL
+  -- DQ-02 / DQ-01: Open-Meteo archive/live invalid
+  SELECT 'raw.openmeteo_*',
+         source_file || '|' || COALESCE(weather_date,'?'),
+         CASE WHEN weather_date IS NULL OR temperature_2m_max_c IS NULL THEN 'DQ-01' ELSE 'DQ-02' END,
+         'ERROR',
+         'tmax=' || COALESCE(temperature_2m_max_c::text,'NULL') || ';precip=' || COALESCE(precipitation_sum_mm::text,'NULL'),
+         'Null or negative Open-Meteo archive measurement'
+  FROM raw.openmeteo_archive
+  WHERE weather_date IS NULL OR temperature_2m_max_c IS NULL OR precipitation_sum_mm &lt; 0 OR rain_sum_mm &lt; 0
+
+  UNION ALL
+  -- DQ-07: Invalid FX
+  SELECT 'raw.fx_usd_idr',
+         COALESCE(rate_date,'?') || '|' || COALESCE(source_api,'?'),
+         'DQ-07',
+         'ERROR',
+         'usd_idr=' || COALESCE(usd_idr_rate::text,'NULL'),
+         'Invalid or non-positive USD/IDR FX rate'
+  FROM raw.fx_usd_idr
+  WHERE rate_date IS NULL OR usd_idr_rate IS NULL OR usd_idr_rate &lt;= 0
+)
+SELECT (SELECT rid FROM run_ctx) AS run_id,
+       source_table, business_key, rule_id, severity, raw_payload, reason
+FROM q_all</sql>
+    <variables_active>N</variables_active>
+    <attributes/>
+    <GUI><xloc>160</xloc><yloc>80</yloc></GUI>
+  </transform>
+  <transform>
+    <name>Write stg.quarantine_records</name>
+    <type>TableOutput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning><method>none</method><schema_name/></partitioning>
+    <commit>1000</commit>
+    <connection>lab-postgres</connection>
+    <fields>
+      <field><column_name>run_id</column_name><stream_name>run_id</stream_name></field>
+      <field><column_name>source_table</column_name><stream_name>source_table</stream_name></field>
+      <field><column_name>business_key</column_name><stream_name>business_key</stream_name></field>
+      <field><column_name>rule_id</column_name><stream_name>rule_id</stream_name></field>
+      <field><column_name>severity</column_name><stream_name>severity</stream_name></field>
+      <field><column_name>raw_payload</column_name><stream_name>raw_payload</stream_name></field>
+      <field><column_name>reason</column_name><stream_name>reason</stream_name></field>
+    </fields>
+    <ignore_errors>N</ignore_errors>
+    <partitioning_daily>N</partitioning_daily>
+    <partitioning_enabled>N</partitioning_enabled>
+    <partitioning_monthly>Y</partitioning_monthly>
+    <return_keys>N</return_keys>
+    <specify_fields>Y</specify_fields>
+    <schema>stg</schema>
+    <table>quarantine_records</table>
+    <tablename_in_field>N</tablename_in_field>
+    <tablename_in_table>Y</tablename_in_table>
+    <truncate>Y</truncate>
+    <use_batch>Y</use_batch>
+    <attributes/>
+    <GUI><xloc>480</xloc><yloc>80</yloc></GUI>
+  </transform>
+  <transform>
+    <name>Evaluate DQ Rules Summary</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning><method>none</method><schema_name/></partitioning>
+    <connection>lab-postgres</connection>
+    <execute_each_row>N</execute_each_row>
+    <limit>0</limit>
+    <sql>WITH run_ctx AS (SELECT to_char(now(), 'YYYYMMDD_HH24MISS') AS rid),
+rules AS (
+  SELECT 'DQ-01' AS rule_id, 'raw_staging_null_check' AS target_key,
+         ((SELECT COUNT(*) FROM raw.pihps_market_prices WHERE date_param IS NULL OR dki_jakarta IS NULL OR jawa_barat IS NULL OR jawa_tengah IS NULL)
+          + (SELECT COUNT(*) FROM raw.pihps_produsen_prices WHERE date_param IS NULL OR jawa_barat IS NULL OR jawa_tengah IS NULL)
+          + (SELECT COUNT(*) FROM raw.openmeteo_archive WHERE weather_date IS NULL OR temperature_2m_max_c IS NULL)) AS fail_cnt,
+         'Null mandatory key or metric check across raw price/weather' AS descr
+  UNION ALL
+  SELECT 'DQ-02', 'bmkg_openmeteo_sensor_check',
+         (SELECT COUNT(*) FROM raw.bmkg_forecast WHERE t_celsius IN (8888,9999) OR hu_pct IN (8888,9999) OR tp_mm IN (8888,9999) OR ws_kmh IN (8888,9999) OR tp_mm &lt; 0),
+         'BMKG sentinel codes (8888/9999) or impossible weather metrics'
+  UNION ALL
+  SELECT 'DQ-03', 'strategic_price_numeric_positive',
+         ((SELECT COUNT(*) FROM raw.pihps_market_prices WHERE dki_jakarta &lt;= 0 OR jawa_barat &lt;= 0 OR jawa_tengah &lt;= 0)
+          + (SELECT COUNT(*) FROM raw.dki_harga_pokok_bulanan
+             WHERE komoditas IN ('BAWANG MERAH','BAWANG PUTIH','BERAS IR. I (IR 64)','BERAS MEDIUM','BERAS SETRA I/PREMIUM','CABE MERAH KERITING','CABE RAWIT MERAH')
+               AND (harga_raw IS NULL OR replace(trim(harga_raw), ',', '') !~ '^[0-9]+(\.[0-9]+)?$' OR replace(trim(harga_raw), ',', '')::numeric &lt;= 0))),
+         'Non-positive or N/A prices in strategic commodities'
+  UNION ALL
+  SELECT 'DQ-04', 'pihps_daily_spike_gt_300pct',
+         (SELECT COUNT(*) FROM stg.food_prices_daily WHERE prev_price_rp &gt; 0 AND ABS((price_rp - prev_price_rp)/prev_price_rp) &gt; 3.0),
+         'Day-over-day price spike exceeding 300%'
+  UNION ALL
+  SELECT 'DQ-05', 'corridor_domain_integrity',
+         ((SELECT COUNT(*) FROM stg.food_prices_daily WHERE commodity_code NOT IN ('beras','cabai_rawit_merah','cabai_merah_keriting','bawang_merah','bawang_putih'))
+          + (SELECT COUNT(*) FROM raw.ref_supply_corridor WHERE active_for_join = TRUE AND verification_status &lt;&gt; 'OBSERVED_FDP')),
+         'Commodity domain &amp; observed corridor active_for_join integrity'
+  UNION ALL
+  SELECT 'DQ-06', 'scd2_interval_validity',
+         ((SELECT COUNT(*) FROM raw.ref_bbm_esdm WHERE valid_from::date &gt; valid_to::date)
+          + (SELECT COUNT(*) FROM raw.ref_bapanas_het WHERE valid_from::date &gt; valid_to::date)
+          + (SELECT COUNT(*) FROM raw.ref_bapanas_het a JOIN raw.ref_bapanas_het b
+             ON a.reg_id &lt; b.reg_id AND a.komoditas = b.komoditas AND a.varian_mutu = b.varian_mutu
+             AND a.valid_from::date &lt;= b.valid_to::date AND b.valid_from::date &lt;= a.valid_to::date)),
+         'SCD Type-2 date validity &amp; non-overlap check on BBM and HET'
+  UNION ALL
+  SELECT 'DQ-07', 'fx_usd_idr_positive',
+         (SELECT COUNT(*) FROM raw.fx_usd_idr WHERE rate_date IS NULL OR usd_idr_rate IS NULL OR usd_idr_rate &lt;= 0),
+         'USD/IDR exchange rate non-null &amp; positive check'
+)
+SELECT (SELECT rid FROM run_ctx) AS run_id,
+       target_key AS order_id,
+       rule_id,
+       CASE WHEN fail_cnt &gt; 0 THEN 'WARN_QUARANTINED' ELSE 'INFO_PASS' END AS severity,
+       descr || ' | failed_count=' || fail_cnt AS reason,
+       CASE WHEN fail_cnt = 0 THEN 'PASSED' ELSE 'QUARANTINED' END AS resolution_status
+FROM rules</sql>
+    <variables_active>N</variables_active>
+    <attributes/>
+    <GUI><xloc>160</xloc><yloc>192</yloc></GUI>
+  </transform>
+  <transform>
+    <name>Write dq.quality_issues</name>
+    <type>TableOutput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning><method>none</method><schema_name/></partitioning>
+    <commit>100</commit>
+    <connection>lab-postgres</connection>
+    <fields>
+      <field><column_name>run_id</column_name><stream_name>run_id</stream_name></field>
+      <field><column_name>order_id</column_name><stream_name>order_id</stream_name></field>
+      <field><column_name>rule_id</column_name><stream_name>rule_id</stream_name></field>
+      <field><column_name>severity</column_name><stream_name>severity</stream_name></field>
+      <field><column_name>reason</column_name><stream_name>reason</stream_name></field>
+      <field><column_name>resolution_status</column_name><stream_name>resolution_status</stream_name></field>
+    </fields>
+    <ignore_errors>N</ignore_errors>
+    <partitioning_daily>N</partitioning_daily>
+    <partitioning_enabled>N</partitioning_enabled>
+    <partitioning_monthly>Y</partitioning_monthly>
+    <return_keys>N</return_keys>
+    <specify_fields>Y</specify_fields>
+    <schema>dq</schema>
+    <table>quality_issues</table>
+    <tablename_in_field>N</tablename_in_field>
+    <tablename_in_table>Y</tablename_in_table>
+    <truncate>N</truncate>
+    <use_batch>Y</use_batch>
+    <attributes/>
+    <GUI><xloc>480</xloc><yloc>192</yloc></GUI>
+  </transform>
+  <transform>
+    <name>Compute Layer Reconciliation</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning><method>none</method><schema_name/></partitioning>
+    <connection>lab-postgres</connection>
+    <execute_each_row>N</execute_each_row>
+    <limit>0</limit>
+    <sql>WITH run_ctx AS (SELECT to_char(now(), 'YYYYMMDD_HH24MISS') AS rid),
+pihps_raw AS (
+  SELECT COUNT(*) AS cnt,
+         ROUND(SUM(val)::numeric, 2) AS sum_rp
+  FROM (
+    SELECT ROUND(dki_jakarta::numeric, 2) AS val FROM raw.pihps_market_prices
+    UNION ALL SELECT ROUND(jawa_barat::numeric, 2) FROM raw.pihps_market_prices
+    UNION ALL SELECT ROUND(jawa_tengah::numeric, 2) FROM raw.pihps_market_prices
+    UNION ALL SELECT ROUND(jawa_barat::numeric, 2) FROM raw.pihps_produsen_prices
+    UNION ALL SELECT ROUND(jawa_tengah::numeric, 2) FROM raw.pihps_produsen_prices
+  ) u
+),
+pihps_stg AS (
+  SELECT COUNT(*) AS cnt, COALESCE(ROUND(SUM(price_rp)::numeric, 2), 0) AS sum_rp
+  FROM stg.food_prices_daily
+),
+pihps_q AS (
+  SELECT COUNT(*) AS cnt FROM stg.quarantine_records WHERE source_table = 'raw.pihps_*'
+),
+dki_rec AS (
+  SELECT
+    (SELECT COUNT(*) FROM raw.dki_harga_pokok_bulanan) + (SELECT COUNT(*) FROM raw.info_pangan_jkt) AS raw_cnt,
+    (SELECT COUNT(*) FROM stg.dki_reference_prices) AS stg_cnt,
+    (SELECT COUNT(*) FROM raw.dki_harga_pokok_bulanan
+     WHERE komoditas IN ('BAWANG MERAH','BAWANG PUTIH','BERAS IR. I (IR 64)','BERAS MEDIUM','BERAS SETRA I/PREMIUM','CABE MERAH KERITING','CABE RAWIT MERAH')
+       AND (harga_raw IS NULL OR replace(trim(harga_raw), ',', '') !~ '^[0-9]+(\.[0-9]+)?$' OR replace(trim(harga_raw), ',', '')::numeric &lt;= 0)) AS q_cnt,
+    ((SELECT COUNT(*) FROM raw.dki_harga_pokok_bulanan WHERE komoditas NOT IN ('BAWANG MERAH','BAWANG PUTIH','BERAS IR. I (IR 64)','BERAS MEDIUM','BERAS SETRA I/PREMIUM','CABE MERAH KERITING','CABE RAWIT MERAH'))
+     + (SELECT COUNT(*) FROM raw.info_pangan_jkt WHERE komoditas NOT IN ('BAWANG MERAH','BAWANG PUTIH','BERAS IR I','BERAS IR III','CABAI MERAH KERITING','CABAI RAWIT MERAH','CABAI RAWIT MERHA'))) AS flt_cnt
+),
+w_rec AS (
+  SELECT
+    (SELECT COUNT(*) FROM raw.openmeteo_archive)
+    + (SELECT COUNT(*) FROM raw.openmeteo_live)
+    + (SELECT COUNT(DISTINCT left(local_datetime,10) || '|' || region_key) FROM raw.bmkg_forecast) AS raw_cnt,
+    (SELECT COUNT(*) FROM stg.weather_daily) AS stg_cnt,
+    (SELECT COUNT(*) FROM raw.bmkg_forecast
+     WHERE t_celsius IN (8888,9999) OR hu_pct IN (8888,9999) OR tp_mm IN (8888,9999) OR ws_kmh IN (8888,9999) OR tp_mm &lt; 0) AS q_cnt
+),
+fx_rec AS (
+  SELECT (SELECT COUNT(*) FROM raw.fx_usd_idr) AS raw_cnt,
+         (SELECT COUNT(*) FROM stg.fx_daily) AS stg_cnt,
+         (SELECT COUNT(*) FROM raw.fx_usd_idr WHERE rate_date IS NULL OR usd_idr_rate IS NULL OR usd_idr_rate &lt;= 0) AS q_cnt,
+         ROUND((SELECT COALESCE(SUM(usd_idr_rate), 0)::numeric FROM raw.fx_usd_idr WHERE usd_idr_rate &gt; 0), 2) AS raw_sum,
+         ROUND((SELECT COALESCE(SUM(usd_idr_rate), 0)::numeric FROM stg.fx_daily), 2) AS stg_sum
+),
+hbkn_rec AS (
+  SELECT (SELECT COUNT(*) FROM raw.hbkn_calendar) AS raw_cnt,
+         (SELECT COUNT(*) FROM stg.hbkn_daily) AS stg_cnt
+),
+rows_out AS (
+  SELECT 'raw-&gt;stg' AS layer_pair,
+         'raw.pihps_* (unpivoted)' AS source_table,
+         'stg.food_prices_daily' AS target_table,
+         (SELECT cnt FROM pihps_raw) AS rows_in,
+         (SELECT cnt FROM pihps_stg) AS rows_accepted,
+         (SELECT cnt FROM pihps_q) AS rows_quarantined,
+         0::bigint AS rows_filtered,
+         (SELECT sum_rp FROM pihps_raw) AS raw_measure_sum,
+         (SELECT sum_rp FROM pihps_stg) AS target_measure_sum
+  UNION ALL
+  SELECT 'raw-&gt;stg',
+         'raw.dki_harga_pokok_bulanan + raw.info_pangan_jkt',
+         'stg.dki_reference_prices',
+         raw_cnt, stg_cnt, q_cnt, flt_cnt, NULL::numeric, NULL::numeric
+  FROM dki_rec
+  UNION ALL
+  SELECT 'raw-&gt;stg',
+         'raw.openmeteo_* + raw.bmkg_forecast (daily)',
+         'stg.weather_daily',
+         raw_cnt, stg_cnt, q_cnt, (raw_cnt - stg_cnt - q_cnt)::bigint, NULL::numeric, NULL::numeric
+  FROM w_rec
+  UNION ALL
+  SELECT 'raw-&gt;stg',
+         'raw.fx_usd_idr',
+         'stg.fx_daily',
+         raw_cnt, stg_cnt, q_cnt, (raw_cnt - stg_cnt - q_cnt)::bigint, raw_sum, stg_sum
+  FROM fx_rec
+  UNION ALL
+  SELECT 'raw-&gt;stg',
+         'raw.hbkn_calendar',
+         'stg.hbkn_daily',
+         raw_cnt, stg_cnt, 0::bigint, (raw_cnt - stg_cnt)::bigint, NULL::numeric, NULL::numeric
+  FROM hbkn_rec
+)
+SELECT (SELECT rid FROM run_ctx) AS run_id,
+       layer_pair, source_table, target_table,
+       rows_in, rows_accepted, rows_quarantined, rows_filtered,
+       (rows_in - rows_accepted - rows_quarantined - rows_filtered) AS delta_rows,
+       raw_measure_sum, target_measure_sum,
+       (raw_measure_sum - target_measure_sum) AS measure_delta,
+       CASE
+         WHEN (rows_in - rows_accepted - rows_quarantined - rows_filtered) = 0
+          AND (raw_measure_sum IS NULL OR ABS(raw_measure_sum - target_measure_sum) &lt; 1.0)
+         THEN 'PASS' ELSE 'FAIL'
+       END AS status
+FROM rows_out</sql>
+    <variables_active>N</variables_active>
+    <attributes/>
+    <GUI><xloc>160</xloc><yloc>304</yloc></GUI>
+  </transform>
+  <transform>
+    <name>Write dq.reconciliation_log</name>
+    <type>TableOutput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning><method>none</method><schema_name/></partitioning>
+    <commit>100</commit>
+    <connection>lab-postgres</connection>
+    <fields>
+      <field><column_name>run_id</column_name><stream_name>run_id</stream_name></field>
+      <field><column_name>layer_pair</column_name><stream_name>layer_pair</stream_name></field>
+      <field><column_name>source_table</column_name><stream_name>source_table</stream_name></field>
+      <field><column_name>target_table</column_name><stream_name>target_table</stream_name></field>
+      <field><column_name>rows_in</column_name><stream_name>rows_in</stream_name></field>
+      <field><column_name>rows_accepted</column_name><stream_name>rows_accepted</stream_name></field>
+      <field><column_name>rows_quarantined</column_name><stream_name>rows_quarantined</stream_name></field>
+      <field><column_name>rows_filtered</column_name><stream_name>rows_filtered</stream_name></field>
+      <field><column_name>delta_rows</column_name><stream_name>delta_rows</stream_name></field>
+      <field><column_name>raw_measure_sum</column_name><stream_name>raw_measure_sum</stream_name></field>
+      <field><column_name>target_measure_sum</column_name><stream_name>target_measure_sum</stream_name></field>
+      <field><column_name>measure_delta</column_name><stream_name>measure_delta</stream_name></field>
+      <field><column_name>status</column_name><stream_name>status</stream_name></field>
+    </fields>
+    <ignore_errors>N</ignore_errors>
+    <partitioning_daily>N</partitioning_daily>
+    <partitioning_enabled>N</partitioning_enabled>
+    <partitioning_monthly>Y</partitioning_monthly>
+    <return_keys>N</return_keys>
+    <specify_fields>Y</specify_fields>
+    <schema>dq</schema>
+    <table>reconciliation_log</table>
+    <tablename_in_field>N</tablename_in_field>
+    <tablename_in_table>Y</tablename_in_table>
+    <truncate>N</truncate>
+    <use_batch>Y</use_batch>
+    <attributes/>
+    <GUI><xloc>480</xloc><yloc>304</yloc></GUI>
+  </transform>
+  <transform_error_handling/>
+  <attributes/>
+</pipeline>
