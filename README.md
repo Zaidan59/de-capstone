@@ -162,7 +162,7 @@ Pipeline dipisahkan ke subfolder per layer (`pipelines/raw/`, `pipelines/stg/`, 
 | `dq/pl_dq_and_reconcile.hpl` | DQ | Eksekusi 7 aturan (`DQ-01..07`), karantina record gagal, & rekonsiliasi `raw→stg` | `stg.quarantine_records`, `dq.quality_issues`, `dq.reconciliation_log` |
 | `curated/pl_load_dimensions.hpl` | Curated | Upsert idempoten 5 dimensi (termasuk `is_pre_hbkn_7d`, SCD2 HET/BBM, & FX forward-fill) | `curated.dim_*` (5 tabel) |
 | `curated/pl_load_fact.hpl` | Curated | Muat fact harian, hitung MA14/margin/risk index/early alert (ketat `active_for_join`), & rekonsiliasi `stg→curated` | `curated.fact_food_supply_daily`, `dq.reconciliation_log` |
-| `wf_ingest_bmkg.hwf` / `wf_load_sales.hwf` | Pendukung | Workflow uji mandiri BMKG & baseline lab (`pl_load_sales.hpl`) | `raw.bmkg_forecast`, `stg.sales_orders` |
+| `wf_load_sales.hwf` | Starter Lab | Workflow & pipeline baseline koneksi Postgres (`hop-demo` / `pl_load_sales.hpl`) | `stg.sales_orders` |
 
 ---
 
@@ -196,7 +196,7 @@ de-capstone/
 ├── README.md                       # Panduan setup, pipeline, & alur kerja tim
 ├── SECURITY_AND_LIFECYCLE.md        # Klasifikasi data, cek secret, RBAC, & retensi (A03-26)
 ├── docker/                         # Dockerfile (workbench + MySQL JDBC + HOP_AUDIT_FOLDER, dll.)
-├── docs/                           # Proposal, template laporan, Evidence Workbook XLSX, panduan lab, & arsip dataset
+├── docs/                           # Proposal, template laporan, rancangan mart, Evidence Workbook XLSX, & panduan lab
 ├── scripts/
 │   ├── lab.sh                      # Helper script untuk Linux / macOS / Git Bash
 │   └── lab.ps1                     # Helper script untuk Windows PowerShell
