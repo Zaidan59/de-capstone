@@ -1,4 +1,4 @@
-﻿-- QUERY 4 (versi aman): harga DKI bulanan, tahan terhadap nilai non-numerik seperti N/A
+-- QUERY 4 (versi aman): harga DKI bulanan, tahan terhadap nilai non-numerik seperti N/A
 SELECT COUNT(*) AS n, COUNT(DISTINCT periode_data) AS jumlah_bulan,
        COUNT(DISTINCT wilayah) AS jumlah_wilayah, COUNT(DISTINCT komoditas) AS nama_komoditas,
        COUNT(*) FILTER (WHERE harga_raw IS NULL OR TRIM(harga_raw) = '') AS harga_kosong,

@@ -1,4 +1,4 @@
-﻿-- P1: hari kosong per seri harian PIHPS
+-- P1: hari kosong per seri harian PIHPS
 WITH s AS (SELECT market_tier, commodity, MIN(date_param::date) d0, MAX(date_param::date) d1, COUNT(DISTINCT date_param) n
            FROM raw.pihps_market_prices GROUP BY 1,2)
 SELECT 'P1' AS profil, market_tier, commodity, (d1-d0+1) AS hari_kalender, n AS hari_ada, (d1-d0+1)-n AS hari_kosong,

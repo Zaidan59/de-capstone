@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pipeline>
+  <info>
+    <name>pl_stg_pihps</name>
+    <name_sync_with_filename>Y</name_sync_with_filename>
+    <description>A03-08: raw PIHPS (market + produsen) ke stg.price_pihps, unpivot wilayah</description>
+    <extended_description/>
+    <pipeline_version/>
+    <pipeline_type>Normal</pipeline_type>
+    <parameters/>
+    <capture_transform_performance>N</capture_transform_performance>
+    <transform_performance_capturing_delay>1000</transform_performance_capturing_delay>
+    <transform_performance_capturing_size_limit>100</transform_performance_capturing_size_limit>
+    <created_user>-</created_user>
+    <created_date>2026/11/26 12:00:00.000</created_date>
+    <modified_user>-</modified_user>
+    <modified_date>2026/11/26 12:00:00.000</modified_date>
+  </info>
+  <notepads/>
+  <order>
+    <hop><from>Read price_pihps</from><to>Write price_pihps</to><enabled>Y</enabled></hop>
+  </order>
+  <transform>
+    <name>Read price_pihps</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning><method>none</method><schema_name/></partitioning>
+    <connection>lab-postgres</connection>
+    <sql>SELECT &apos;SRC-01/02&apos; AS source_id, lower(trim(m.market_tier)) AS market_tier, lower(trim(m.commodity)) AS commodity_key, stg.safe_date(m.date_param) AS price_date, v.region_key AS region_key, round(v.val::numeric, 2) AS price_rp, (SELECT max(run_id) FROM ops.pipeline_runs WHERE pipeline_name = &apos;wf_ingest_all_sources&apos;) AS run_id, m.ingested_at AS raw_ingested_at
+FROM raw.pihps_market_prices m
+CROSS JOIN LATERAL (VALUES (&apos;DKI&apos;, m.dki_jakarta), (&apos;JABAR&apos;, m.jawa_barat), (&apos;JATENG&apos;, m.jawa_tengah)) AS v(region_key, val)
+UNION ALL
+SELECT &apos;SRC-03&apos;, &apos;produsen&apos;, lower(trim(p.commodity)), stg.safe_date(p.date_param), v.region_key, round(v.val::numeric, 2), (SELECT max(run_id) FROM ops.pipeline_runs WHERE pipeline_name = &apos;wf_ingest_all_sources&apos;), p.ingested_at
+FROM raw.pihps_produsen_prices p
+CROSS JOIN LATERAL (VALUES (&apos;JABAR&apos;, p.jawa_barat), (&apos;JATENG&apos;, p.jawa_tengah)) AS v(region_key, val)</sql>
+    <limit>0</limit>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>N</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <GUI><xloc>144</xloc><yloc>80</yloc></GUI>
+  </transform>
+  <transform>
+    <name>Write price_pihps</name>
+    <type>TableOutput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning><method>none</method><schema_name/></partitioning>
+    <commit>1000</commit>
+    <connection>lab-postgres</connection>
+    <fields>
+        <field><column_name>source_id</column_name><stream_name>source_id</stream_name></field>
+        <field><column_name>market_tier</column_name><stream_name>market_tier</stream_name></field>
+        <field><column_name>commodity_key</column_name><stream_name>commodity_key</stream_name></field>
+        <field><column_name>price_date</column_name><stream_name>price_date</stream_name></field>
+        <field><column_name>region_key</column_name><stream_name>region_key</stream_name></field>
+        <field><column_name>price_rp</column_name><stream_name>price_rp</stream_name></field>
+        <field><column_name>run_id</column_name><stream_name>run_id</stream_name></field>
+        <field><column_name>raw_ingested_at</column_name><stream_name>raw_ingested_at</stream_name></field>
+    </fields>
+    <ignore_errors>N</ignore_errors>
+    <partitioning_daily>N</partitioning_daily>
+    <partitioning_enabled>N</partitioning_enabled>
+    <partitioning_monthly>Y</partitioning_monthly>
+    <return_keys>N</return_keys>
+    <specify_fields>Y</specify_fields>
+    <schema>stg</schema>
+    <table>price_pihps</table>
+    <tablename_in_field>N</tablename_in_field>
+    <tablename_in_table>Y</tablename_in_table>
+    <truncate>Y</truncate>
+    <use_batch>Y</use_batch>
+    <attributes/>
+    <GUI><xloc>480</xloc><yloc>80</yloc></GUI>
+  </transform>  <transform_error_handling/>
+  <attributes/>
+</pipeline>

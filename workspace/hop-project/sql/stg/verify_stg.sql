@@ -1,4 +1,4 @@
-﻿WITH c(cek, expected, actual) AS (VALUES
+WITH c(cek, expected, actual) AS (VALUES
  ('price_pihps market x3',  (SELECT count(*)*3 FROM raw.pihps_market_prices),   (SELECT count(*) FROM stg.price_pihps WHERE source_id='SRC-01/02')),
  ('price_pihps produsen x2',(SELECT count(*)*2 FROM raw.pihps_produsen_prices), (SELECT count(*) FROM stg.price_pihps WHERE source_id='SRC-03')),
  ('price_dki_monthly',      (SELECT count(*) FROM raw.dki_harga_pokok_bulanan), (SELECT count(*) FROM stg.price_dki_monthly)),

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workflow>
+  <name>wf_stg_all</name>
+  <name_sync_with_filename>Y</name_sync_with_filename>
+  <description>A03-08: raw ke staging (10 tabel stg.*), urutan: DDL idempoten lalu 5 pipeline</description>
+  <extended_description/>
+  <workflow_version>1.0</workflow_version>
+  <workflow_status>0</workflow_status>
+  <created_user>-</created_user>
+  <created_date>2026/11/26 12:00:00.000</created_date>
+  <modified_user>-</modified_user>
+  <modified_date>2026/11/26 12:00:00.000</modified_date>
+  <parameters/>
+  <actions>
+    <action>
+      <name>Start</name><description/><type>SPECIAL</type><attributes/>
+      <repeat>N</repeat><schedulerType>0</schedulerType><intervalSeconds>0</intervalSeconds><intervalMinutes>60</intervalMinutes><hour>12</hour><minutes>0</minutes><weekDay>1</weekDay><DayOfMonth>1</DayOfMonth>
+      <parallel>N</parallel><xloc>48</xloc><yloc>96</yloc><attributes_hac/>
+    </action>
+    <action>
+      <name>Ensure stg tables</name><description/><type>SQL</type><attributes/>
+      <connection>lab-postgres</connection><sendOneStatement>T</sendOneStatement>
+      <sql/><sqlfilename>${PROJECT_HOME}/sql/stg/create_stg.sql</sqlfilename><sqlfromfile>T</sqlfromfile><useVariableSubstitution>F</useVariableSubstitution>
+      <parallel>N</parallel><xloc>208</xloc><yloc>96</yloc><attributes_hac/>
+    </action>
+    <action>
+      <name>pl_stg_pihps.hpl</name><description/><type>PIPELINE</type><attributes/>
+      <filename>${PROJECT_HOME}/pipelines/pl_stg_pihps.hpl</filename>
+      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
+      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
+      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
+      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
+      <parallel>N</parallel><xloc>400</xloc><yloc>96</yloc><attributes_hac/>
+    </action>    <action>
+      <name>pl_stg_dki.hpl</name><description/><type>PIPELINE</type><attributes/>
+      <filename>${PROJECT_HOME}/pipelines/pl_stg_dki.hpl</filename>
+      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
+      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
+      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
+      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
+      <parallel>N</parallel><xloc>576</xloc><yloc>96</yloc><attributes_hac/>
+    </action>    <action>
+      <name>pl_stg_weather.hpl</name><description/><type>PIPELINE</type><attributes/>
+      <filename>${PROJECT_HOME}/pipelines/pl_stg_weather.hpl</filename>
+      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
+      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
+      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
+      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
+      <parallel>N</parallel><xloc>752</xloc><yloc>96</yloc><attributes_hac/>
+    </action>    <action>
+      <name>pl_stg_fx.hpl</name><description/><type>PIPELINE</type><attributes/>
+      <filename>${PROJECT_HOME}/pipelines/pl_stg_fx.hpl</filename>
+      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
+      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
+      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
+      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
+      <parallel>N</parallel><xloc>928</xloc><yloc>96</yloc><attributes_hac/>
+    </action>    <action>
+      <name>pl_stg_reference.hpl</name><description/><type>PIPELINE</type><attributes/>
+      <filename>${PROJECT_HOME}/pipelines/pl_stg_reference.hpl</filename>
+      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
+      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
+      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
+      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
+      <parallel>N</parallel><xloc>1104</xloc><yloc>96</yloc><attributes_hac/>
+    </action>    <action>
+      <name>Success</name><description/><type>SUCCESS</type><attributes/>
+      <parallel>N</parallel><xloc>1280</xloc><yloc>96</yloc><attributes_hac/>
+    </action>
+  </actions>
+  <hops>
+    <hop><from>Start</from><to>Ensure stg tables</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>Y</unconditional></hop>
+    <hop><from>Ensure stg tables</from><to>pl_stg_pihps.hpl</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
+    <hop><from>pl_stg_pihps.hpl</from><to>pl_stg_dki.hpl</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
+    <hop><from>pl_stg_dki.hpl</from><to>pl_stg_weather.hpl</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
+    <hop><from>pl_stg_weather.hpl</from><to>pl_stg_fx.hpl</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
+    <hop><from>pl_stg_fx.hpl</from><to>pl_stg_reference.hpl</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
+    <hop><from>pl_stg_reference.hpl</from><to>Success</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
+  </hops>
+  <notepads/>
+  <attributes/>
+</workflow>

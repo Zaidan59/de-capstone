@@ -1,4 +1,4 @@
-﻿BEGIN;
+BEGIN;
 CREATE TEMP TABLE _ctx ON COMMIT DROP AS
   SELECT max(run_id) AS run_id FROM ops.pipeline_runs WHERE pipeline_name = 'wf_ingest_all_sources';
 TRUNCATE stg.price_pihps, stg.price_dki_monthly, stg.price_info_pangan_jkt, stg.weather_daily,
