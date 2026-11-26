@@ -1,4 +1,5 @@
-﻿CREATE SCHEMA IF NOT EXISTS stg;
+﻿-- Standalone SQL staging DDL (PR #2 baseline; distinct from active Hop table stg.weather_daily in sql/04-stg-dq-ops-ddl.sql)
+CREATE SCHEMA IF NOT EXISTS stg;
 CREATE OR REPLACE FUNCTION stg.safe_date(x text) RETURNS date LANGUAGE plpgsql IMMUTABLE AS $$
 BEGIN RETURN x::date; EXCEPTION WHEN others THEN RETURN NULL; END $$;
 CREATE OR REPLACE FUNCTION stg.safe_ts(x text) RETURNS timestamp LANGUAGE plpgsql IMMUTABLE AS $$
@@ -20,7 +21,7 @@ CREATE TABLE IF NOT EXISTS stg.price_dki_monthly (
 CREATE TABLE IF NOT EXISTS stg.price_info_pangan_jkt (
   source_id text NOT NULL, period_year integer, commodity_std text, price_raw text, price_rp numeric(14,2),
   run_id integer, raw_ingested_at timestamptz, stg_loaded_at timestamptz NOT NULL DEFAULT now());
-CREATE TABLE IF NOT EXISTS stg.weather_daily (
+CREATE TABLE IF NOT EXISTS stg.weather_openmeteo (
   source_id text NOT NULL, region_key text, weather_date date, temp_max_c numeric(6,2),
   precip_mm numeric(8,2), rain_mm numeric(8,2), data_origin text, http_status integer,
   run_id integer, raw_ingested_at timestamptz, stg_loaded_at timestamptz NOT NULL DEFAULT now());

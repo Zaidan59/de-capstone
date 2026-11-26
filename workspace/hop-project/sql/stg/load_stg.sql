@@ -1,7 +1,8 @@
-﻿BEGIN;
+﻿-- Standalone SQL staging load (PR #2 baseline; distinct from active Hop stg.weather_daily)
+BEGIN;
 CREATE TEMP TABLE _ctx ON COMMIT DROP AS
   SELECT max(run_id) AS run_id FROM ops.pipeline_runs WHERE pipeline_name = 'wf_ingest_all_sources';
-TRUNCATE stg.price_pihps, stg.price_dki_monthly, stg.price_info_pangan_jkt, stg.weather_daily,
+TRUNCATE stg.price_pihps, stg.price_dki_monthly, stg.price_info_pangan_jkt, stg.weather_openmeteo,
          stg.bmkg_forecast, stg.fx_usd_idr, stg.hbkn_calendar,
          stg.ref_bbm_esdm, stg.ref_bapanas_het, stg.ref_supply_corridor;
 -- PIHPS pasar tradisional dan modern (SRC-01/02): unpivot 3 wilayah
@@ -34,7 +35,7 @@ SELECT 'SRC-04', CASE WHEN trim(periode_data) ~ '^[0-9]{4}(\.0+)?$' THEN substr(
        (SELECT run_id FROM _ctx), ingested_at
 FROM raw.info_pangan_jkt;
 -- Cuaca harian: arsip + live (SRC-05..07)
-INSERT INTO stg.weather_daily (source_id, region_key, weather_date, temp_max_c, precip_mm, rain_mm, data_origin, http_status, run_id, raw_ingested_at)
+INSERT INTO stg.weather_openmeteo (source_id, region_key, weather_date, temp_max_c, precip_mm, rain_mm, data_origin, http_status, run_id, raw_ingested_at)
 SELECT CASE WHEN r.region_key IN ('garut','magelang') THEN 'SRC-05'
             WHEN r.region_key IN ('karawang','indramayu') THEN 'SRC-06'
             WHEN r.region_key IN ('brebes','dki_jakarta') THEN 'SRC-07'

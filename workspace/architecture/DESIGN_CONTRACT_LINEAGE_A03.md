@@ -95,3 +95,27 @@ curated.dim_commodity -------+------- curated.dim_region_corridor
   - Perubahan nama komoditas/wilayah di `SRC-01..04`: cukup update mapping kanonik di `pl_stg_food_prices.hpl`; struktur `curated` dan `semantic` tetap stabil.
   - Perubahan nilai HET/HAP (`SRC-11`) atau tarif BBM (`SRC-10`): tambah baris SCD Type-2 baru dengan `valid_from` efektif & tutup baris lama (`valid_to`, `is_current = FALSE`); histori masa lalu tidak berubah (*non-destructive*).
   - Verifikasi koridor baru (`SRC-12`, mis. jika data FDP BPS untuk beras/bawang merah tervalidasi): ubah `active_for_join = TRUE` di `ref_supply_corridor.csv` dan re-run `wf_main_etl.hwf`; `semantic.v_kpi_margin_ratio` otomatis mencakup koridor baru.
+
+---
+
+## 7. Harmonisasi Artefak Tim & Cross-Reference (`PR #1` & `PR #2`)
+
+1. **Staging Jalur Hop vs SQL Standalone (`PR #2`)**:
+   - **Jalur Hop Aktif** (`sql/04-stg-dq-ops-ddl.sql` + `workspace/hop-project/pipelines/stg/*.hpl`): membangun `stg.food_prices_daily`, `stg.dki_reference_prices`, `stg.weather_daily`, `stg.fx_daily`, `stg.hbkn_daily`, dan `stg.quarantine_records` untuk konsumsi `curated.*` dan `semantic.*`.
+   - **Jalur SQL Audit/Baseline** (`workspace/hop-project/sql/stg/{create_stg,load_stg,verify_stg}.sql`): tabel cuaca di jalur ini memakai nama `stg.weather_openmeteo` agar tidak bentrok dengan `stg.weather_daily` milik jalur Hop aktif.
+
+2. **Cross-Reference Aturan DQ (`DQ_RULES_A03-06.md` ↔ `pl_dq_and_reconcile.hpl`)**:
+   - `DQ-01` Hop (`Null key/metric`) ↔ Ghalib `DQ-01` (`Completeness`) & `DQ-06` (`weather NULL`).
+   - `DQ-02` Hop (`BMKG 8888/9999 & impossible weather`) ↔ Ghalib `DQ-06` (`Cuaca 0–500 mm/hari`) + simulasi kode sensor BMKG.
+   - `DQ-03` Hop (`Non-positive / N/A strategic price`) ↔ Ghalib `DQ-01` (`248 N/A DKI`) & `DQ-02` (`harga > 0`).
+   - `DQ-04` Hop (`Spike > 300%`) ↔ Ghalib `DQ-05` (`Consistency <= 300%`).
+   - `DQ-05` Hop (`Commodity & corridor active_for_join`) ↔ Ghalib `DQ-07` (`Referential`).
+   - `DQ-06` Hop (`SCD2 valid_from..valid_to`) ↔ Ghalib `DQ-10` (`Consistency SCD2`).
+   - `DQ-07` Hop (`FX > 0`) ↔ Ghalib `DQ-02` / `DQ-04`.
+   - *Profiling tambahan Ghalib*: `DQ-03` (`0` duplicate key), `DQ-04` (`0` out-of-range dates), `DQ-08` (kelengkapan kalender PIHPS tradisional `94,1–94,2%`), dan `DQ-09` (`591` nilai tak bulat PIHPS — ditangani via `ROUND(..., 2)` di `pl_stg_food_prices.hpl`).
+
+3. **Pemetaan Rancangan Mart Konseptual (`docs/data_mart/*`) ↔ Implementasi Runnable (`sql/create_mart.sql`)**:
+   - Dokumen `docs/data_mart/01..04` menjelaskan model konseptual *Galaxy Schema* (`12` tabel); implementasi runnable di `sql/create_mart.sql` mengkonsolidasikannya menjadi **Star Schema 5 dimensi + 1 fact** sesuai proposal awal:
+     - `curated.dim_region_corridor` menyatukan metadata koridor `COR-01..09`, wilayah sentra, dan flag governance `active_for_join` (pengganti `bridge_supply_corridor` terpisah).
+     - `curated.dim_macro_logistics` menyatukan tarif SCD Type-2 BBM (`Biosolar` & `Pertalite`) dan FX harian forward-filled per `date_sk`.
+     - `curated.fact_food_supply_daily` + `semantic.v_kpi_early_intervention_alert` menjaga agar harga DKI tidak ter-double-count lintas koridor, dan schema `mart.*` menyediakan alias `VIEW` read-only ke `curated.*`.
