@@ -2,68 +2,118 @@
 <workflow>
   <name>wf_main_etl</name>
   <name_sync_with_filename>Y</name_sync_with_filename>
-  <description>End-to-end Capstone Group A03 orchestrator: resilient ingest (live API + fallback snapshot) -&gt; stg -&gt; DQ &amp; reconcile -&gt; curated star schema -&gt; ops manifest (A03-24, A03-14)</description>
+  <description>End-to-end Capstone Group A03 orchestrator: resilient ingest (live API + fallback snapshot) -> stg -> DQ &amp; reconcile -> curated star schema -> ops manifest (A03-24, A03-14)</description>
   <extended_description/>
-  <workflow_version>1.0</workflow_version>
-  <workflow_status>0</workflow_status>
   <created_user>-</created_user>
-  <created_date>2026/11/26 10:28:00.000</created_date>
   <modified_user>-</modified_user>
+  <created_date>2026/11/26 10:28:00.000</created_date>
   <modified_date>2026/11/26 10:28:00.000</modified_date>
+  <workflow_version>1.0</workflow_version>
   <parameters>
     <parameter>
       <name>SIMULATE_BMKG_FAIL</name>
-      <default_value>N</default_value>
       <description>Set Y for controlled API outage &amp; fallback recovery test (A03-27)</description>
+      <default_value>N</default_value>
     </parameter>
   </parameters>
   <actions>
     <action>
-      <name>Start</name><description/><type>SPECIAL</type><attributes/>
-      <repeat>N</repeat><schedulerType>0</schedulerType><intervalSeconds>0</intervalSeconds><intervalMinutes>60</intervalMinutes><hour>12</hour><minutes>0</minutes><weekDay>1</weekDay><DayOfMonth>1</DayOfMonth>
-      <parallel>N</parallel><xloc>48</xloc><yloc>112</yloc><attributes_hac/>
+      <repeat>N</repeat>
+      <schedulerType>0</schedulerType>
+      <intervalSeconds>0</intervalSeconds>
+      <intervalMinutes>60</intervalMinutes>
+      <DayOfMonth>1</DayOfMonth>
+      <weekDay>1</weekDay>
+      <minutes>0</minutes>
+      <hour>12</hour>
+      <doNotWaitOnFirstExecution>N</doNotWaitOnFirstExecution>
+      <name>Start</name>
+      <description/>
+      <type>SPECIAL</type>
+      <attributes/>
+      <xloc>48</xloc>
+      <yloc>112</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Init Snapshot &amp; Run Start</name><description/><type>SQL</type><attributes/>
-      <connection>lab-postgres</connection><sendOneStatement>F</sendOneStatement>
       <sql>CREATE TABLE IF NOT EXISTS ops.last_good_bmkg_forecast (LIKE raw.bmkg_forecast);
 CREATE TABLE IF NOT EXISTS ops.last_good_openmeteo_live (LIKE raw.openmeteo_live);
 
-DELETE FROM ops.last_good_bmkg_forecast WHERE (SELECT COUNT(*) FROM raw.bmkg_forecast) &gt; 0;
+DELETE FROM ops.last_good_bmkg_forecast WHERE (SELECT COUNT(*) FROM raw.bmkg_forecast) > 0;
 INSERT INTO ops.last_good_bmkg_forecast
-SELECT * FROM raw.bmkg_forecast WHERE (SELECT COUNT(*) FROM raw.bmkg_forecast) &gt; 0;
+SELECT * FROM raw.bmkg_forecast WHERE (SELECT COUNT(*) FROM raw.bmkg_forecast) > 0;
 
-DELETE FROM ops.last_good_openmeteo_live WHERE (SELECT COUNT(*) FROM raw.openmeteo_live) &gt; 0;
+DELETE FROM ops.last_good_openmeteo_live WHERE (SELECT COUNT(*) FROM raw.openmeteo_live) > 0;
 INSERT INTO ops.last_good_openmeteo_live
-SELECT * FROM raw.openmeteo_live WHERE (SELECT COUNT(*) FROM raw.openmeteo_live) &gt; 0;
+SELECT * FROM raw.openmeteo_live WHERE (SELECT COUNT(*) FROM raw.openmeteo_live) > 0;
 
 INSERT INTO ops.run_manifest (
   workflow_name, step_name, source_or_target, status, fallback_used, started_at, completed_at, duration_ms
 ) VALUES (
   'wf_main_etl', '00_init_snapshot', 'ops.last_good_*', 'SUCCESS', FALSE, now(), now(), 0
 );</sql>
-      <sqlfilename/><sqlfromfile>F</sqlfromfile><useVariableSubstitution>F</useVariableSubstitution>
-      <parallel>N</parallel><xloc>192</xloc><yloc>112</yloc><attributes_hac/>
+      <connection>lab-postgres</connection>
+      <useVariableSubstitution>N</useVariableSubstitution>
+      <sqlfromfile>N</sqlfromfile>
+      <sqlfilename/>
+      <sqlfilename_encoding/>
+      <sendOneStatement>N</sendOneStatement>
+      <name>Init Snapshot &amp; Run Start</name>
+      <description/>
+      <type>SQL</type>
+      <attributes/>
+      <xloc>144</xloc>
+      <yloc>112</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Check BMKG API Gate</name><description/><type>SQL</type><attributes/>
-      <connection>lab-postgres</connection><sendOneStatement>F</sendOneStatement>
       <sql>SELECT 1 / (CASE WHEN '${SIMULATE_BMKG_FAIL}' = 'Y' THEN 0 ELSE 1 END);</sql>
-      <sqlfilename/><sqlfromfile>F</sqlfromfile><useVariableSubstitution>Y</useVariableSubstitution>
-      <parallel>N</parallel><xloc>272</xloc><yloc>112</yloc><attributes_hac/>
+      <connection>lab-postgres</connection>
+      <useVariableSubstitution>Y</useVariableSubstitution>
+      <sqlfromfile>N</sqlfromfile>
+      <sqlfilename/>
+      <sqlfilename_encoding/>
+      <sendOneStatement>N</sendOneStatement>
+      <name>Check BMKG API Gate</name>
+      <description/>
+      <type>SQL</type>
+      <attributes/>
+      <xloc>304</xloc>
+      <yloc>112</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Ingest BMKG Live API</name><description/><type>PIPELINE</type><attributes/>
       <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_bmkg.hpl</filename>
-      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
-      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
-      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
-      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
-      <parallel>N</parallel><xloc>368</xloc><yloc>112</yloc><attributes_hac/>
+      <params_from_previous>N</params_from_previous>
+      <exec_per_row>N</exec_per_row>
+      <clear_rows>N</clear_rows>
+      <clear_files>N</clear_files>
+      <create_parent_folder>N</create_parent_folder>
+      <set_logfile>N</set_logfile>
+      <set_append_logfile>N</set_append_logfile>
+      <logfile/>
+      <logext/>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <loglevel>Basic</loglevel>
+      <wait_until_finished>Y</wait_until_finished>
+      <parameters>
+        <pass_all_parameters>Y</pass_all_parameters>
+      </parameters>
+      <run_configuration>local</run_configuration>
+      <name>Ingest BMKG Live API</name>
+      <description/>
+      <type>PIPELINE</type>
+      <attributes/>
+      <xloc>448</xloc>
+      <yloc>112</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Fallback Restore BMKG Snapshot</name><description/><type>SQL</type><attributes/>
-      <connection>lab-postgres</connection><sendOneStatement>F</sendOneStatement>
       <sql>TRUNCATE raw.bmkg_forecast;
 INSERT INTO raw.bmkg_forecast SELECT * FROM ops.last_good_bmkg_forecast;
 INSERT INTO ops.run_manifest (
@@ -75,21 +125,50 @@ SELECT 'wf_main_etl', '01_ingest_bmkg_fallback', 'raw.bmkg_forecast',
        'Live BMKG API failed after 3 retries; restored last verified snapshot',
        now(), now(), 0
 FROM raw.bmkg_forecast;</sql>
-      <sqlfilename/><sqlfromfile>F</sqlfromfile><useVariableSubstitution>F</useVariableSubstitution>
-      <parallel>N</parallel><xloc>368</xloc><yloc>240</yloc><attributes_hac/>
+      <connection>lab-postgres</connection>
+      <useVariableSubstitution>N</useVariableSubstitution>
+      <sqlfromfile>N</sqlfromfile>
+      <sqlfilename/>
+      <sqlfilename_encoding/>
+      <sendOneStatement>N</sendOneStatement>
+      <name>Fallback Restore BMKG Snapshot</name>
+      <description/>
+      <type>SQL</type>
+      <attributes/>
+      <xloc>352</xloc>
+      <yloc>240</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Ingest OpenMeteo Live API</name><description/><type>PIPELINE</type><attributes/>
       <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_openmeteo_live.hpl</filename>
-      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
-      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
-      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
-      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
-      <parallel>N</parallel><xloc>560</xloc><yloc>112</yloc><attributes_hac/>
+      <params_from_previous>N</params_from_previous>
+      <exec_per_row>N</exec_per_row>
+      <clear_rows>N</clear_rows>
+      <clear_files>N</clear_files>
+      <create_parent_folder>N</create_parent_folder>
+      <set_logfile>N</set_logfile>
+      <set_append_logfile>N</set_append_logfile>
+      <logfile/>
+      <logext/>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <loglevel>Basic</loglevel>
+      <wait_until_finished>Y</wait_until_finished>
+      <parameters>
+        <pass_all_parameters>Y</pass_all_parameters>
+      </parameters>
+      <run_configuration>local</run_configuration>
+      <name>Ingest OpenMeteo Live API</name>
+      <description/>
+      <type>PIPELINE</type>
+      <attributes/>
+      <xloc>608</xloc>
+      <yloc>112</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Fallback Restore OpenMeteo Snapshot</name><description/><type>SQL</type><attributes/>
-      <connection>lab-postgres</connection><sendOneStatement>F</sendOneStatement>
       <sql>TRUNCATE raw.openmeteo_live;
 INSERT INTO raw.openmeteo_live SELECT * FROM ops.last_good_openmeteo_live;
 INSERT INTO ops.run_manifest (
@@ -101,138 +180,413 @@ SELECT 'wf_main_etl', '02_ingest_openmeteo_live_fallback', 'raw.openmeteo_live',
        'Live Open-Meteo API failed after 3 retries; restored last verified snapshot',
        now(), now(), 0
 FROM raw.openmeteo_live;</sql>
-      <sqlfilename/><sqlfromfile>F</sqlfromfile><useVariableSubstitution>F</useVariableSubstitution>
-      <parallel>N</parallel><xloc>560</xloc><yloc>240</yloc><attributes_hac/>
+      <connection>lab-postgres</connection>
+      <useVariableSubstitution>N</useVariableSubstitution>
+      <sqlfromfile>N</sqlfromfile>
+      <sqlfilename/>
+      <sendOneStatement>N</sendOneStatement>
+      <name>Fallback Restore OpenMeteo Snapshot</name>
+      <description/>
+      <type>SQL</type>
+      <attributes/>
+      <xloc>576</xloc>
+      <yloc>240</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Ingest Batch &amp; Reference Sources</name><description/><type>PIPELINE</type><attributes/>
       <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_references.hpl</filename>
-      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
-      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
-      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
-      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
-      <parallel>N</parallel><xloc>752</xloc><yloc>112</yloc><attributes_hac/>
+      <params_from_previous>N</params_from_previous>
+      <exec_per_row>N</exec_per_row>
+      <clear_rows>N</clear_rows>
+      <clear_files>N</clear_files>
+      <create_parent_folder>N</create_parent_folder>
+      <set_logfile>N</set_logfile>
+      <set_append_logfile>N</set_append_logfile>
+      <logfile/>
+      <logext/>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <loglevel>Basic</loglevel>
+      <wait_until_finished>Y</wait_until_finished>
+      <parameters>
+        <pass_all_parameters>Y</pass_all_parameters>
+      </parameters>
+      <run_configuration>local</run_configuration>
+      <name>Ingest Batch &amp; Reference Sources</name>
+      <description/>
+      <type>PIPELINE</type>
+      <attributes/>
+      <xloc>800</xloc>
+      <yloc>112</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Ingest OpenMeteo Archive</name><description/><type>PIPELINE</type><attributes/>
       <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_openmeteo_archive.hpl</filename>
-      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
-      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
-      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
-      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
-      <parallel>N</parallel><xloc>848</xloc><yloc>112</yloc><attributes_hac/>
+      <params_from_previous>N</params_from_previous>
+      <exec_per_row>N</exec_per_row>
+      <clear_rows>N</clear_rows>
+      <clear_files>N</clear_files>
+      <create_parent_folder>N</create_parent_folder>
+      <set_logfile>N</set_logfile>
+      <set_append_logfile>N</set_append_logfile>
+      <logfile/>
+      <logext/>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <loglevel>Basic</loglevel>
+      <wait_until_finished>Y</wait_until_finished>
+      <parameters>
+        <pass_all_parameters>Y</pass_all_parameters>
+      </parameters>
+      <run_configuration>local</run_configuration>
+      <name>Ingest OpenMeteo Archive</name>
+      <description/>
+      <type>PIPELINE</type>
+      <attributes/>
+      <xloc>800</xloc>
+      <yloc>48</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Ingest FX &amp; HBKN</name><description/><type>PIPELINE</type><attributes/>
       <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_fx.hpl</filename>
-      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
-      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
-      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
-      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
-      <parallel>N</parallel><xloc>928</xloc><yloc>48</yloc><attributes_hac/>
+      <params_from_previous>N</params_from_previous>
+      <exec_per_row>N</exec_per_row>
+      <clear_rows>N</clear_rows>
+      <clear_files>N</clear_files>
+      <create_parent_folder>N</create_parent_folder>
+      <set_logfile>N</set_logfile>
+      <set_append_logfile>N</set_append_logfile>
+      <logfile/>
+      <logext/>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <loglevel>Basic</loglevel>
+      <wait_until_finished>Y</wait_until_finished>
+      <parameters>
+        <pass_all_parameters>Y</pass_all_parameters>
+      </parameters>
+      <run_configuration>local</run_configuration>
+      <name>Ingest FX &amp; HBKN</name>
+      <description/>
+      <type>PIPELINE</type>
+      <attributes/>
+      <xloc>960</xloc>
+      <yloc>48</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Ingest HBKN Calendar</name><description/><type>PIPELINE</type><attributes/>
       <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_hbkn.hpl</filename>
-      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
-      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
-      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
-      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
-      <parallel>N</parallel><xloc>1024</xloc><yloc>48</yloc><attributes_hac/>
+      <params_from_previous>N</params_from_previous>
+      <exec_per_row>N</exec_per_row>
+      <clear_rows>N</clear_rows>
+      <clear_files>N</clear_files>
+      <create_parent_folder>N</create_parent_folder>
+      <set_logfile>N</set_logfile>
+      <set_append_logfile>N</set_append_logfile>
+      <logfile/>
+      <logext/>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <loglevel>Basic</loglevel>
+      <wait_until_finished>Y</wait_until_finished>
+      <parameters>
+        <pass_all_parameters>Y</pass_all_parameters>
+      </parameters>
+      <run_configuration>local</run_configuration>
+      <name>Ingest HBKN Calendar</name>
+      <description/>
+      <type>PIPELINE</type>
+      <attributes/>
+      <xloc>1088</xloc>
+      <yloc>48</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Ingest InfoPangan &amp; DKI</name><description/><type>PIPELINE</type><attributes/>
       <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_info_pangan_jkt.hpl</filename>
-      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
-      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
-      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
-      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
-      <parallel>N</parallel><xloc>1024</xloc><yloc>112</yloc><attributes_hac/>
+      <params_from_previous>N</params_from_previous>
+      <exec_per_row>N</exec_per_row>
+      <clear_rows>N</clear_rows>
+      <clear_files>N</clear_files>
+      <create_parent_folder>N</create_parent_folder>
+      <set_logfile>N</set_logfile>
+      <set_append_logfile>N</set_append_logfile>
+      <logfile/>
+      <logext/>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <loglevel>Basic</loglevel>
+      <wait_until_finished>Y</wait_until_finished>
+      <parameters>
+        <pass_all_parameters>Y</pass_all_parameters>
+      </parameters>
+      <run_configuration>local</run_configuration>
+      <name>Ingest InfoPangan &amp; DKI</name>
+      <description/>
+      <type>PIPELINE</type>
+      <attributes/>
+      <xloc>1088</xloc>
+      <yloc>176</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Ingest DKI Komponen</name><description/><type>PIPELINE</type><attributes/>
       <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_dki_komponen.hpl</filename>
-      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
-      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
-      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
-      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
-      <parallel>N</parallel><xloc>1024</xloc><yloc>176</yloc><attributes_hac/>
+      <params_from_previous>N</params_from_previous>
+      <exec_per_row>N</exec_per_row>
+      <clear_rows>N</clear_rows>
+      <clear_files>N</clear_files>
+      <create_parent_folder>N</create_parent_folder>
+      <set_logfile>N</set_logfile>
+      <set_append_logfile>N</set_append_logfile>
+      <logfile/>
+      <logext/>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <loglevel>Basic</loglevel>
+      <wait_until_finished>Y</wait_until_finished>
+      <parameters>
+        <pass_all_parameters>Y</pass_all_parameters>
+      </parameters>
+      <run_configuration>local</run_configuration>
+      <name>Ingest DKI Komponen</name>
+      <description/>
+      <type>PIPELINE</type>
+      <attributes/>
+      <xloc>1008</xloc>
+      <yloc>112</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Ingest PIHPS MySQL</name><description/><type>PIPELINE</type><attributes/>
       <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_pihps_mysql.hpl</filename>
-      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
-      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
-      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
-      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
-      <parallel>N</parallel><xloc>928</xloc><yloc>112</yloc><attributes_hac/>
+      <params_from_previous>N</params_from_previous>
+      <exec_per_row>N</exec_per_row>
+      <clear_rows>N</clear_rows>
+      <clear_files>N</clear_files>
+      <create_parent_folder>N</create_parent_folder>
+      <set_logfile>N</set_logfile>
+      <set_append_logfile>N</set_append_logfile>
+      <logfile/>
+      <logext/>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <loglevel>Basic</loglevel>
+      <wait_until_finished>Y</wait_until_finished>
+      <parameters>
+        <pass_all_parameters>Y</pass_all_parameters>
+      </parameters>
+      <run_configuration>local</run_configuration>
+      <name>Ingest PIHPS MySQL</name>
+      <description/>
+      <type>PIPELINE</type>
+      <attributes/>
+      <xloc>928</xloc>
+      <yloc>176</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Ingest PIHPS Produsen</name><description/><type>PIPELINE</type><attributes/>
       <filename>${PROJECT_HOME}/pipelines/raw/pl_ingest_pihps_produsen.hpl</filename>
-      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
-      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
-      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
-      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
-      <parallel>N</parallel><xloc>928</xloc><yloc>240</yloc><attributes_hac/>
+      <params_from_previous>N</params_from_previous>
+      <exec_per_row>N</exec_per_row>
+      <clear_rows>N</clear_rows>
+      <clear_files>N</clear_files>
+      <create_parent_folder>N</create_parent_folder>
+      <set_logfile>N</set_logfile>
+      <set_append_logfile>N</set_append_logfile>
+      <logfile/>
+      <logext/>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <loglevel>Basic</loglevel>
+      <wait_until_finished>Y</wait_until_finished>
+      <parameters>
+        <pass_all_parameters>Y</pass_all_parameters>
+      </parameters>
+      <run_configuration>local</run_configuration>
+      <name>Ingest PIHPS Produsen</name>
+      <description/>
+      <type>PIPELINE</type>
+      <attributes/>
+      <xloc>928</xloc>
+      <yloc>240</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Stage Food Prices</name><description/><type>PIPELINE</type><attributes/>
       <filename>${PROJECT_HOME}/pipelines/stg/pl_stg_food_prices.hpl</filename>
-      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
-      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
-      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
-      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
-      <parallel>N</parallel><xloc>752</xloc><yloc>240</yloc><attributes_hac/>
+      <params_from_previous>N</params_from_previous>
+      <exec_per_row>N</exec_per_row>
+      <clear_rows>N</clear_rows>
+      <clear_files>N</clear_files>
+      <create_parent_folder>N</create_parent_folder>
+      <set_logfile>N</set_logfile>
+      <set_append_logfile>N</set_append_logfile>
+      <logfile/>
+      <logext/>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <loglevel>Basic</loglevel>
+      <wait_until_finished>Y</wait_until_finished>
+      <parameters>
+        <pass_all_parameters>Y</pass_all_parameters>
+      </parameters>
+      <run_configuration>local</run_configuration>
+      <name>Stage Food Prices</name>
+      <description/>
+      <type>PIPELINE</type>
+      <attributes/>
+      <xloc>752</xloc>
+      <yloc>240</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Stage Weather</name><description/><type>PIPELINE</type><attributes/>
       <filename>${PROJECT_HOME}/pipelines/stg/pl_stg_weather.hpl</filename>
-      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
-      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
-      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
-      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
-      <parallel>N</parallel><xloc>752</xloc><yloc>352</yloc><attributes_hac/>
+      <params_from_previous>N</params_from_previous>
+      <exec_per_row>N</exec_per_row>
+      <clear_rows>N</clear_rows>
+      <clear_files>N</clear_files>
+      <create_parent_folder>N</create_parent_folder>
+      <set_logfile>N</set_logfile>
+      <set_append_logfile>N</set_append_logfile>
+      <logfile/>
+      <logext/>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <loglevel>Basic</loglevel>
+      <wait_until_finished>Y</wait_until_finished>
+      <parameters>
+        <pass_all_parameters>Y</pass_all_parameters>
+      </parameters>
+      <run_configuration>local</run_configuration>
+      <name>Stage Weather</name>
+      <description/>
+      <type>PIPELINE</type>
+      <attributes/>
+      <xloc>752</xloc>
+      <yloc>352</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Stage Macro &amp; HBKN</name><description/><type>PIPELINE</type><attributes/>
       <filename>${PROJECT_HOME}/pipelines/stg/pl_stg_macro_ref.hpl</filename>
-      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
-      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
-      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
-      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
-      <parallel>N</parallel><xloc>560</xloc><yloc>352</yloc><attributes_hac/>
+      <params_from_previous>N</params_from_previous>
+      <exec_per_row>N</exec_per_row>
+      <clear_rows>N</clear_rows>
+      <clear_files>N</clear_files>
+      <create_parent_folder>N</create_parent_folder>
+      <set_logfile>N</set_logfile>
+      <set_append_logfile>N</set_append_logfile>
+      <logfile/>
+      <logext/>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <loglevel>Basic</loglevel>
+      <wait_until_finished>Y</wait_until_finished>
+      <parameters>
+        <pass_all_parameters>Y</pass_all_parameters>
+      </parameters>
+      <run_configuration>local</run_configuration>
+      <name>Stage Macro &amp; HBKN</name>
+      <description/>
+      <type>PIPELINE</type>
+      <attributes/>
+      <xloc>560</xloc>
+      <yloc>352</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Run DQ &amp; Reconcile</name><description/><type>PIPELINE</type><attributes/>
       <filename>${PROJECT_HOME}/pipelines/dq/pl_dq_and_reconcile.hpl</filename>
-      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
-      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
-      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
-      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
-      <parallel>N</parallel><xloc>368</xloc><yloc>352</yloc><attributes_hac/>
+      <params_from_previous>N</params_from_previous>
+      <exec_per_row>N</exec_per_row>
+      <clear_rows>N</clear_rows>
+      <clear_files>N</clear_files>
+      <create_parent_folder>N</create_parent_folder>
+      <set_logfile>N</set_logfile>
+      <set_append_logfile>N</set_append_logfile>
+      <logfile/>
+      <logext/>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <loglevel>Basic</loglevel>
+      <wait_until_finished>Y</wait_until_finished>
+      <parameters>
+        <pass_all_parameters>Y</pass_all_parameters>
+      </parameters>
+      <run_configuration>local</run_configuration>
+      <name>Run DQ &amp; Reconcile</name>
+      <description/>
+      <type>PIPELINE</type>
+      <attributes/>
+      <xloc>368</xloc>
+      <yloc>352</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Load Curated Dimensions</name><description/><type>PIPELINE</type><attributes/>
       <filename>${PROJECT_HOME}/pipelines/curated/pl_load_dimensions.hpl</filename>
-      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
-      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
-      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
-      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
-      <parallel>N</parallel><xloc>192</xloc><yloc>352</yloc><attributes_hac/>
+      <params_from_previous>N</params_from_previous>
+      <exec_per_row>N</exec_per_row>
+      <clear_rows>N</clear_rows>
+      <clear_files>N</clear_files>
+      <create_parent_folder>N</create_parent_folder>
+      <set_logfile>N</set_logfile>
+      <set_append_logfile>N</set_append_logfile>
+      <logfile/>
+      <logext/>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <loglevel>Basic</loglevel>
+      <wait_until_finished>Y</wait_until_finished>
+      <parameters>
+        <pass_all_parameters>Y</pass_all_parameters>
+      </parameters>
+      <run_configuration>local</run_configuration>
+      <name>Load Curated Dimensions</name>
+      <description/>
+      <type>PIPELINE</type>
+      <attributes/>
+      <xloc>192</xloc>
+      <yloc>352</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Load Curated Fact</name><description/><type>PIPELINE</type><attributes/>
       <filename>${PROJECT_HOME}/pipelines/curated/pl_load_fact.hpl</filename>
-      <params_from_previous>N</params_from_previous><exec_per_row>N</exec_per_row><clear_rows>N</clear_rows><clear_files>N</clear_files>
-      <set_logfile>N</set_logfile><logfile/><logext/><add_date>N</add_date><add_time>N</add_time><loglevel>Basic</loglevel><set_append_logfile>N</set_append_logfile>
-      <wait_until_finished>Y</wait_until_finished><create_parent_folder>N</create_parent_folder><run_configuration>local</run_configuration>
-      <parameters><pass_all_parameters>Y</pass_all_parameters></parameters>
-      <parallel>N</parallel><xloc>192</xloc><yloc>464</yloc><attributes_hac/>
+      <params_from_previous>N</params_from_previous>
+      <exec_per_row>N</exec_per_row>
+      <clear_rows>N</clear_rows>
+      <clear_files>N</clear_files>
+      <create_parent_folder>N</create_parent_folder>
+      <set_logfile>N</set_logfile>
+      <set_append_logfile>N</set_append_logfile>
+      <logfile/>
+      <logext/>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <loglevel>Basic</loglevel>
+      <wait_until_finished>Y</wait_until_finished>
+      <parameters>
+        <pass_all_parameters>Y</pass_all_parameters>
+      </parameters>
+      <run_configuration>local</run_configuration>
+      <name>Load Curated Fact</name>
+      <description/>
+      <type>PIPELINE</type>
+      <attributes/>
+      <xloc>192</xloc>
+      <yloc>464</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Log End-to-End Run Manifest</name><description/><type>SQL</type><attributes/>
-      <connection>lab-postgres</connection><sendOneStatement>F</sendOneStatement>
       <sql>WITH init_ts AS (
   SELECT COALESCE(MAX(started_at), now()) AS ts
   FROM ops.run_manifest
@@ -241,7 +595,7 @@ FROM raw.openmeteo_live;</sql>
 fb AS (
   SELECT EXISTS (
     SELECT 1 FROM ops.run_manifest, init_ts
-    WHERE workflow_name = 'wf_main_etl' AND fallback_used = TRUE AND started_at &gt;= init_ts.ts
+    WHERE workflow_name = 'wf_main_etl' AND fallback_used = TRUE AND started_at >= init_ts.ts
   ) AS used_fb
 ),
 stats AS (
@@ -277,40 +631,208 @@ SELECT ins_run.run_id,
        ins_run.completed_at,
        ROUND(EXTRACT(EPOCH FROM (ins_run.completed_at - ins_run.started_at)) * 1000)::bigint
 FROM ins_run, fb, stats;</sql>
-      <sqlfilename/><sqlfromfile>F</sqlfromfile><useVariableSubstitution>F</useVariableSubstitution>
-      <parallel>N</parallel><xloc>368</xloc><yloc>464</yloc><attributes_hac/>
+      <connection>lab-postgres</connection>
+      <useVariableSubstitution>N</useVariableSubstitution>
+      <sqlfromfile>N</sqlfromfile>
+      <sqlfilename/>
+      <sqlfilename_encoding/>
+      <sendOneStatement>N</sendOneStatement>
+      <name>Log End-to-End Run Manifest</name>
+      <description/>
+      <type>SQL</type>
+      <attributes/>
+      <xloc>368</xloc>
+      <yloc>464</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
     <action>
-      <name>Success</name><description/><type>SUCCESS</type><attributes/>
-      <parallel>N</parallel><xloc>560</xloc><yloc>464</yloc><attributes_hac/>
+      <name>Success</name>
+      <description/>
+      <type>SUCCESS</type>
+      <attributes/>
+      <xloc>560</xloc>
+      <yloc>464</yloc>
+      <parallel>N</parallel>
+      <attributes_hac/>
     </action>
   </actions>
   <hops>
-    <hop><from>Start</from><to>Init Snapshot &amp; Run Start</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>Y</unconditional></hop>
-    <hop><from>Init Snapshot &amp; Run Start</from><to>Check BMKG API Gate</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Check BMKG API Gate</from><to>Ingest BMKG Live API</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Check BMKG API Gate</from><to>Fallback Restore BMKG Snapshot</to><enabled>Y</enabled><evaluation>N</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Ingest BMKG Live API</from><to>Ingest OpenMeteo Live API</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Ingest BMKG Live API</from><to>Fallback Restore BMKG Snapshot</to><enabled>Y</enabled><evaluation>N</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Fallback Restore BMKG Snapshot</from><to>Ingest OpenMeteo Live API</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Ingest OpenMeteo Live API</from><to>Ingest Batch &amp; Reference Sources</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Ingest OpenMeteo Live API</from><to>Fallback Restore OpenMeteo Snapshot</to><enabled>Y</enabled><evaluation>N</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Fallback Restore OpenMeteo Snapshot</from><to>Ingest Batch &amp; Reference Sources</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Ingest Batch &amp; Reference Sources</from><to>Ingest OpenMeteo Archive</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Ingest OpenMeteo Archive</from><to>Ingest FX &amp; HBKN</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Ingest FX &amp; HBKN</from><to>Ingest HBKN Calendar</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Ingest HBKN Calendar</from><to>Ingest InfoPangan &amp; DKI</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Ingest InfoPangan &amp; DKI</from><to>Ingest DKI Komponen</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Ingest DKI Komponen</from><to>Ingest PIHPS MySQL</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Ingest PIHPS MySQL</from><to>Ingest PIHPS Produsen</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Ingest PIHPS Produsen</from><to>Stage Food Prices</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Stage Food Prices</from><to>Stage Weather</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Stage Weather</from><to>Stage Macro &amp; HBKN</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Stage Macro &amp; HBKN</from><to>Run DQ &amp; Reconcile</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Run DQ &amp; Reconcile</from><to>Load Curated Dimensions</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Load Curated Dimensions</from><to>Load Curated Fact</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Load Curated Fact</from><to>Log End-to-End Run Manifest</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
-    <hop><from>Log End-to-End Run Manifest</from><to>Success</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>N</unconditional></hop>
+    <hop>
+      <from>Start</from>
+      <to>Init Snapshot &amp; Run Start</to>
+      <evaluation>Y</evaluation>
+      <unconditional>Y</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Init Snapshot &amp; Run Start</from>
+      <to>Check BMKG API Gate</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Check BMKG API Gate</from>
+      <to>Ingest BMKG Live API</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Check BMKG API Gate</from>
+      <to>Fallback Restore BMKG Snapshot</to>
+      <evaluation>N</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Ingest BMKG Live API</from>
+      <to>Ingest OpenMeteo Live API</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Ingest BMKG Live API</from>
+      <to>Fallback Restore BMKG Snapshot</to>
+      <evaluation>N</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Fallback Restore BMKG Snapshot</from>
+      <to>Ingest OpenMeteo Live API</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Ingest OpenMeteo Live API</from>
+      <to>Ingest Batch &amp; Reference Sources</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Ingest OpenMeteo Live API</from>
+      <to>Fallback Restore OpenMeteo Snapshot</to>
+      <evaluation>N</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Fallback Restore OpenMeteo Snapshot</from>
+      <to>Ingest Batch &amp; Reference Sources</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Ingest Batch &amp; Reference Sources</from>
+      <to>Ingest OpenMeteo Archive</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Ingest OpenMeteo Archive</from>
+      <to>Ingest FX &amp; HBKN</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Ingest FX &amp; HBKN</from>
+      <to>Ingest HBKN Calendar</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Ingest HBKN Calendar</from>
+      <to>Ingest InfoPangan &amp; DKI</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Ingest InfoPangan &amp; DKI</from>
+      <to>Ingest DKI Komponen</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Ingest DKI Komponen</from>
+      <to>Ingest PIHPS MySQL</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Ingest PIHPS MySQL</from>
+      <to>Ingest PIHPS Produsen</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Ingest PIHPS Produsen</from>
+      <to>Stage Food Prices</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Stage Food Prices</from>
+      <to>Stage Weather</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Stage Weather</from>
+      <to>Stage Macro &amp; HBKN</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Stage Macro &amp; HBKN</from>
+      <to>Run DQ &amp; Reconcile</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Run DQ &amp; Reconcile</from>
+      <to>Load Curated Dimensions</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Load Curated Dimensions</from>
+      <to>Load Curated Fact</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Load Curated Fact</from>
+      <to>Log End-to-End Run Manifest</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Log End-to-End Run Manifest</from>
+      <to>Success</to>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+      <enabled>Y</enabled>
+    </hop>
   </hops>
   <notepads/>
   <attributes/>
