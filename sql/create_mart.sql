@@ -103,7 +103,22 @@ CREATE INDEX IF NOT EXISTS idx_fact_commodity_date ON curated.fact_food_supply_d
 CREATE INDEX IF NOT EXISTS idx_fact_alert ON curated.fact_food_supply_daily(alert_level, full_date);
 
 -- RBAC enforcement
-GRANT USAGE ON SCHEMA curated, semantic TO etl_writer, tpid_analyst;
+GRANT USAGE ON SCHEMA curated, semantic, mart TO etl_writer, tpid_analyst;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA curated TO etl_writer;
 GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA curated TO etl_writer;
 GRANT SELECT ON ALL TABLES IN SCHEMA curated TO tpid_analyst;
+
+-- Expose read-only views in `mart` pointing to `curated` (zero data duplication)
+CREATE OR REPLACE VIEW mart.dim_commodity AS SELECT * FROM curated.dim_commodity;
+CREATE OR REPLACE VIEW mart.dim_region_corridor AS SELECT * FROM curated.dim_region_corridor;
+CREATE OR REPLACE VIEW mart.dim_date_hbkn AS SELECT * FROM curated.dim_date_hbkn;
+CREATE OR REPLACE VIEW mart.dim_regulation_het AS SELECT * FROM curated.dim_regulation_het;
+CREATE OR REPLACE VIEW mart.dim_macro_logistics AS SELECT * FROM curated.dim_macro_logistics;
+CREATE OR REPLACE VIEW mart.fact_food_supply_daily AS SELECT * FROM curated.fact_food_supply_daily;
+
+GRANT SELECT ON mart.dim_commodity,
+                mart.dim_region_corridor,
+                mart.dim_date_hbkn,
+                mart.dim_regulation_het,
+                mart.dim_macro_logistics,
+                mart.fact_food_supply_daily TO etl_writer, tpid_analyst;
